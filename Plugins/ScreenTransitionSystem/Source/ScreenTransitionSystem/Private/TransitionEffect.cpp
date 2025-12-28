@@ -7,9 +7,9 @@
 
 UTransitionEffect::UTransitionEffect()
 {
-	TransitionType = ETransitionType::Fade;
+	TransitionType = EScreenTransitionType::Fade;
 	Duration = 0.5f;
-	SlideDirection = ESlideDirection::Left;
+	SlideDirection = EScreenTransitionSlideDirection::Left;
 	CurrentTime = 0.0f;
 	bIsPlaying = false;
 	FromScreenRef = nullptr;
@@ -92,7 +92,7 @@ void UTransitionEffect::TickTransition_Implementation(float Alpha)
 
 	switch (TransitionType)
 	{
-	case ETransitionType::Fade:
+	case EScreenTransitionType::Fade:
 	{
 		if (FromScreenRef)
 		{
@@ -104,7 +104,7 @@ void UTransitionEffect::TickTransition_Implementation(float Alpha)
 		}
 		break;
 	}
-	case ETransitionType::Slide:
+	case EScreenTransitionType::Slide:
 	{
 		if (ToScreenRef && ToScreenRef->Slot)
 		{
@@ -116,16 +116,16 @@ void UTransitionEffect::TickTransition_Implementation(float Alpha)
 
 				switch (SlideDirection)
 				{
-				case ESlideDirection::Left:
+				case EScreenTransitionSlideDirection::Left:
 					Offset.X = ScreenSize.X * (1.0f - EasedAlpha);
 					break;
-				case ESlideDirection::Right:
+				case EScreenTransitionSlideDirection::Right:
 					Offset.X = -ScreenSize.X * (1.0f - EasedAlpha);
 					break;
-				case ESlideDirection::Up:
+				case EScreenTransitionSlideDirection::Up:
 					Offset.Y = ScreenSize.Y * (1.0f - EasedAlpha);
 					break;
-				case ESlideDirection::Down:
+				case EScreenTransitionSlideDirection::Down:
 					Offset.Y = -ScreenSize.Y * (1.0f - EasedAlpha);
 					break;
 				}
@@ -135,7 +135,7 @@ void UTransitionEffect::TickTransition_Implementation(float Alpha)
 		}
 		break;
 	}
-	case ETransitionType::Custom:
+	case EScreenTransitionType::Custom:
 		break;
 	}
 }

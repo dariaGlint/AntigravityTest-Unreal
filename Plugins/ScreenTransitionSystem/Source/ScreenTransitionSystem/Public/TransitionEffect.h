@@ -9,7 +9,7 @@ class UScreenBase;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTransitionComplete);
 
 UENUM(BlueprintType)
-enum class ETransitionType : uint8
+enum class EScreenTransitionType : uint8
 {
 	Fade UMETA(DisplayName = "Fade"),
 	Slide UMETA(DisplayName = "Slide"),
@@ -17,7 +17,7 @@ enum class ETransitionType : uint8
 };
 
 UENUM(BlueprintType)
-enum class ESlideDirection : uint8
+enum class EScreenTransitionSlideDirection : uint8
 {
 	Left UMETA(DisplayName = "Left"),
 	Right UMETA(DisplayName = "Right"),
@@ -44,13 +44,13 @@ public:
 	FOnTransitionComplete OnTransitionComplete;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Transition")
-	ETransitionType TransitionType;
+	EScreenTransitionType TransitionType;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Transition")
 	float Duration;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Transition", meta = (EditCondition = "TransitionType == ETransitionType::Slide"))
-	ESlideDirection SlideDirection;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Transition", meta = (EditCondition = "TransitionType == EScreenTransitionType::Slide"))
+	EScreenTransitionSlideDirection SlideDirection;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Transition")

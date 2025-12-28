@@ -16,8 +16,6 @@ UScreenBase::UScreenBase(const FObjectInitializer& ObjectInitializer)
 void UScreenBase::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	SetZOrder(ZOrder);
 }
 
 void UScreenBase::NativeDestruct()
