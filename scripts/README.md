@@ -6,6 +6,26 @@
 
 Worktreeで開発したプラグインをUE5プロジェクトにシンボリックリンクで接続します。
 
+### quick-link.sh - コマンドライン版（最も簡単）
+
+引数を指定してすぐに実行できるシンプル版です。
+
+**使用方法:**
+```bash
+# Claude Codeから実行する場合
+Bash: scripts/quick-link.sh ScreenTransitionSystem C:/MyUE5Project
+
+# または直接ターミナルから
+./scripts/quick-link.sh ScreenTransitionSystem C:/MyUE5Project
+```
+
+**Claudeに依頼する例:**
+```
+「ScreenTransitionSystemをC:/MyUE5Projectにリンクして」
+```
+
+これだけでCloudeがシンボリックリンクを作成します。
+
 ### 利点
 
 - **リアルタイム反映**: Worktreeでの変更が即座にUE5プロジェクトに反映
