@@ -29,6 +29,7 @@ public class AntigravityTest : ModuleRules
 
 		PublicIncludePaths.AddRange(new string[] {
 			"AntigravityTest",
+			"AntigravityTest/AbilitySystem",
 			"AntigravityTest/Variant_Platforming",
 			"AntigravityTest/Variant_Platforming/Animation",
 			"AntigravityTest/Variant_Combat",
