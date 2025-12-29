@@ -1,0 +1,30 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Patrol System",
+	"Description": "A flexible patrol system for AI with waypoint management, patrol routes, wait times, and random/sequential patrol modes",
+	"Category": "AI",
+	"CreatedBy": "Claude",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "PatrolSystem",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine",
+				"AIModule",
+				"StateTreeModule",
+				"GameplayStateTreeModule"
+			]
+		}
+	]
+}
