@@ -20,7 +20,7 @@ jobs:
       - name: Check for new issues and comment
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
             console.log(`Checking all open issues for Claude responses...`);
 
