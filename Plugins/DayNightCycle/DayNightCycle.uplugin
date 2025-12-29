@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Day Night Cycle System",
+	"Description": "A comprehensive day/night cycle system with time progression, lighting updates, and time acceleration features",
+	"Category": "World/Environment",
+	"CreatedBy": "Your Name",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "DayNightCycle",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
