@@ -102,7 +102,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issue.number,
-                  body: '@claude pluginで使える形で実装して。実装が終わったらPullRequestをmainブランチに対して作成して。'
+                  body: '@claude pluginで使える形で実装して。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。'
                 });
 
                 console.log(`Commented on issue #${issue.number}: ${issue.title}`);
