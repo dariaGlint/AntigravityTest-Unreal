@@ -56,8 +56,15 @@ jobs:
             });
 
             let commentedCount = 0;
+            const maxCommentsPerRun = 1; // 1回の実行で1つだけコメント
 
             for (const issue of issues.data) {
+              // 既に上限に達した場合は終了
+              if (commentedCount >= maxCommentsPerRun) {
+                console.log(`Reached maximum comments per run (${maxCommentsPerRun}), stopping.`);
+                break;
+              }
+
               // Pull Requestは除外
               if (issue.pull_request) continue;
 
