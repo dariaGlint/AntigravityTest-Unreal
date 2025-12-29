@@ -22,30 +22,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
-            const path = require('path');
+            console.log(`Checking all open issues for Claude responses...`);
 
-            // 前回チェックした時刻を保存するファイルパス
-            const lastCheckFile = '.github/last-issue-check.txt';
-
-            // 前回のチェック時刻を取得（ファイルが存在しない場合は1時間前）
-            let lastCheckTime;
-            try {
-              const lastCheckContent = await github.rest.repos.getContent({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                path: lastCheckFile
-              });
-              const content = Buffer.from(lastCheckContent.data.content, 'base64').toString();
-              lastCheckTime = new Date(content.trim());
-            } catch (error) {
-              // ファイルが存在しない場合は1時間前から
-              lastCheckTime = new Date(Date.now() - 1 * 60 * 60 * 1000);
-            }
-
-            console.log(`Checking issues created after: ${lastCheckTime.toISOString()}`);
-
-            // 新しいissueを取得
+            // すべてのopenなissueを取得
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -67,14 +46,6 @@ jobs:
 
               // Pull Requestは除外
               if (issue.pull_request) continue;
-
-              const issueCreatedAt = new Date(issue.created_at);
-
-              // 前回チェック以降に作成されたissueのみ処理
-              if (issueCreatedAt <= lastCheckTime) {
-                console.log(`Issue #${issue.number} is older than last check time, stopping.`);
-                break;
-              }
 
               // このissueに紐づくPull Requestがあるかチェック
               const linkedPRs = await github.rest.pulls.list({
@@ -139,35 +110,3 @@ jobs:
             }
 
             console.log(`Total issues commented: ${commentedCount}`);
-
-            // 現在の時刻を保存
-            const currentTime = new Date().toISOString();
-
-            try {
-              // ファイルが既に存在する場合は更新
-              const existingFile = await github.rest.repos.getContent({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                path: lastCheckFile
-              });
-
-              await github.rest.repos.createOrUpdateFileContents({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                path: lastCheckFile,
-                message: 'Update last issue check time',
-                content: Buffer.from(currentTime).toString('base64'),
-                sha: existingFile.data.sha
-              });
-            } catch (error) {
-              // ファイルが存在しない場合は新規作成
-              await github.rest.repos.createOrUpdateFileContents({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                path: lastCheckFile,
-                message: 'Create last issue check time file',
-                content: Buffer.from(currentTime).toString('base64')
-              });
-            }
-
-            console.log(`Updated last check time to: ${currentTime}`);
