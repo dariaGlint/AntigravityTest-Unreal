@@ -83,10 +83,10 @@ jobs:
 
               // Claudeからのコメント（反応）があるかチェック
               const hasClaudeResponse = comments.data.some(comment => {
-                // Claude botのユーザー名やIDでチェック（実際のClaudeのユーザー情報に応じて調整が必要）
+                // Claude botのユーザー名で明示的にチェック（github-actions[bot]は除外）
                 const isClaudeBot = comment.user.login === 'claude[bot]' ||
                                    comment.user.login === 'claude-ai[bot]' ||
-                                   comment.user.type === 'Bot';
+                                   comment.user.login === 'anthropics-claude[bot]';
                 return isClaudeBot;
               });
 
