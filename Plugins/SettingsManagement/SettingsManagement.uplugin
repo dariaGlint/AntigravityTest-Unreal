@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Settings Management System",
+	"Description": "A comprehensive settings management system for UE5 with support for audio, graphics, and control settings, preset management, and save/load functionality",
+	"Category": "UI",
+	"CreatedBy": "Antigravity",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "SettingsManagement",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
