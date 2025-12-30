@@ -1,19 +1,28 @@
-# Analyze Blueprints (Phase 1)
+# Analyze Blueprints (Phase 1-3)
 
-Analyze Unreal Engine Blueprints in the project for naming conventions, structure, and best practices.
+Analyze Unreal Engine Blueprints in the project for naming conventions, structure, and performance.
 
-## ⚠️ Current Status: Phase 1 Only
+## ✅ Implementation Status
 
-**Currently Implemented**: Phase 1 (filesystem-based analysis)
+**Phase 1** (filesystem-based analysis) - ✅ Implemented
 - Naming convention checks
 - Folder structure analysis
 - Basic statistics and categorization
 
-**Not Yet Available**: Phase 2-3 (Python API integration, performance analysis)
+**Phase 2** (Python API integration) - ⚠️ Requires Unreal Editor
 - Node count, function count measurements
 - Event graph complexity analysis
-- Tick usage detection
-- Heavy operation detection
+- Dependency extraction
+
+**Phase 3** (Advanced performance analysis) - ✅ Implemented
+- Tick usage detection and optimization suggestions
+- Heavy operation detection (ForEach loops, string operations)
+- Cast usage optimization checks
+- ConstructionScript complexity analysis
+- Memory usage analysis
+- Best practices checks
+- Auto-generated documentation with Mermaid diagrams
+- Performance metrics and scoring
 
 ## Instructions
 
@@ -147,45 +156,85 @@ Recommendations:
 
 The command can be invoked with different scopes:
 
+### Phase 1 Analysis (Filesystem-based)
+
 - **Full Analysis**: Analyze entire Content directory
-  ```
-  analyze-blueprints
+  ```bash
+  ./scripts/analyze-blueprints.sh
   ```
 
 - **Specific Path**: Analyze a specific folder
-  ```
-  analyze-blueprints --path Content/Variant_Combat/Blueprints
+  ```bash
+  ./scripts/analyze-blueprints.sh --path Content/Variant_Combat/Blueprints
   ```
 
 - **By Type**: Focus on specific asset types
-  ```
-  analyze-blueprints --type blueprints
-  analyze-blueprints --type ui
-  analyze-blueprints --type materials
+  ```bash
+  ./scripts/analyze-blueprints.sh --type blueprints
+  ./scripts/analyze-blueprints.sh --type ui
+  ./scripts/analyze-blueprints.sh --type materials
   ```
 
 - **Generate Diagram**: Create Mermaid visualization
+  ```bash
+  ./scripts/analyze-blueprints.sh --diagram
   ```
-  analyze-blueprints --diagram
+
+### Phase 3 Analysis (Performance)
+
+- **Performance Analysis**: Run performance checks
+  ```bash
+  ./scripts/analyze-blueprints.sh --performance
+  ```
+
+- **Full Analysis**: Complete analysis with all phases
+  ```bash
+  ./scripts/analyze-blueprints.sh --full-analysis
+  ```
+
+- **Save Report**: Output to file
+  ```bash
+  ./scripts/analyze-blueprints.sh --full-analysis --output report.md
+  ```
+
+- **Specific Metrics**: Analyze only certain metrics
+  ```bash
+  ./scripts/analyze-blueprints.sh --performance --metrics tick,cast,loops
+  ```
+
+- **CI/CD Integration**: Fail build on critical issues
+  ```bash
+  ./scripts/analyze-blueprints.sh --performance --fail-on-critical
   ```
 
 ## Implementation Notes
 
-### Phase 1 Implementation (Current)
+### Phase 1 Implementation
 - Filesystem-based analysis only
 - No UE5 Python API required
 - Can run in CI/CD environment
 - Fast and lightweight
+- Analyzes naming conventions, folder structure, and asset organization
 
-### Future Phases (NOT IMPLEMENTED)
-- **Phase 2 (NOT IMPLEMENTED)**: Unreal Python API integration for detailed analysis
-  - Node count, function count
-  - Event graph complexity
-  - Dependency extraction
-- **Phase 3 (NOT IMPLEMENTED)**: Advanced performance analysis
-  - Tick usage detection
-  - Heavy operation detection (ForEach, Cast optimization)
-  - Auto-generated documentation with detailed Mermaid diagrams
+### Phase 2 Implementation (Requires Unreal Editor)
+- Unreal Python API integration for detailed analysis
+- Node count, function count measurements
+- Event graph complexity analysis
+- Dependency extraction
+- Requires Unreal Editor to be running
+
+### Phase 3 Implementation
+- Python-based performance analyzer
+- Configuration file: `Config/BlueprintAnalyzer.ini`
+- Complexity scoring system with customizable weights
+- Issue severity levels (Info, Warning, Critical)
+- Multiple output formats (Markdown, JSON)
+- Mermaid diagram generation for:
+  - Class hierarchies
+  - Complexity visualization
+  - Dependency maps
+- CI/CD integration with `--fail-on-critical` flag
+- Extensible architecture for custom checks
 
 ## Technical Implementation
 
