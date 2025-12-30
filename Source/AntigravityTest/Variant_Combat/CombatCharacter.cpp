@@ -15,6 +15,7 @@
 #include "TimerManager.h"
 #include "Engine/LocalPlayer.h"
 #include "CombatPlayerController.h"
+#include "Gameplay/CombatTargetingComponent.h"
 
 ACombatCharacter::ACombatCharacter()
 {
@@ -46,6 +47,9 @@ ACombatCharacter::ACombatCharacter()
 	// create the life bar widget component
 	LifeBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("LifeBar"));
 	LifeBar->SetupAttachment(RootComponent);
+
+	// create the targeting component
+	TargetingComponent = CreateDefaultSubobject<UCombatTargetingComponent>(TEXT("TargetingComponent"));
 
 	// set the player tag
 	Tags.Add(FName("Player"));
@@ -90,6 +94,34 @@ void ACombatCharacter::ToggleCamera()
 {
 	// call the BP hook
 	BP_ToggleCamera();
+}
+
+void ACombatCharacter::TargetLockPressed()
+{
+	if (TargetingComponent)
+	{
+		TargetingComponent->ToggleTargetLock();
+	}
+}
+
+void ACombatCharacter::SwitchTarget(const FInputActionValue& Value)
+{
+	if (!TargetingComponent)
+	{
+		return;
+	}
+
+	// Get the switch direction (1 for next, -1 for previous)
+	float Direction = Value.Get<float>();
+
+	if (Direction > 0.0f)
+	{
+		TargetingComponent->SwitchToNextTarget();
+	}
+	else if (Direction < 0.0f)
+	{
+		TargetingComponent->SwitchToPreviousTarget();
+	}
 }
 
 void ACombatCharacter::DoMove(float Right, float Forward)
@@ -531,6 +563,18 @@ void ACombatCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Camera Side Toggle
 		EnhancedInputComponent->BindAction(ToggleCameraAction, ETriggerEvent::Triggered, this, &ACombatCharacter::ToggleCamera);
+
+		// Target Lock
+		if (TargetLockAction)
+		{
+			EnhancedInputComponent->BindAction(TargetLockAction, ETriggerEvent::Started, this, &ACombatCharacter::TargetLockPressed);
+		}
+
+		// Switch Target
+		if (SwitchTargetAction)
+		{
+			EnhancedInputComponent->BindAction(SwitchTargetAction, ETriggerEvent::Triggered, this, &ACombatCharacter::SwitchTarget);
+		}
 	}
 }
 

@@ -15,6 +15,7 @@ class UInputAction;
 struct FInputActionValue;
 class UCombatLifeBar;
 class UWidgetComponent;
+class UCombatTargetingComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogCombatCharacter, Log, All);
 
@@ -42,6 +43,10 @@ class ACombatCharacter : public ACharacter, public ICombatAttacker, public IComb
 	/** Life bar widget component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* LifeBar;
+
+	/** Targeting component for lock-on functionality */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	UCombatTargetingComponent* TargetingComponent;
 	
 protected:
 
@@ -72,6 +77,14 @@ protected:
 	/** Toggle Camera Side Input Action */
 	UPROPERTY(EditAnywhere, Category ="Input")
 	UInputAction* ToggleCameraAction;
+
+	/** Target Lock Input Action */
+	UPROPERTY(EditAnywhere, Category ="Input")
+	UInputAction* TargetLockAction;
+
+	/** Switch Target Input Action */
+	UPROPERTY(EditAnywhere, Category ="Input")
+	UInputAction* SwitchTargetAction;
 
 	/** Max amount of HP the character will have on respawn */
 	UPROPERTY(EditAnywhere, Category="Damage", meta = (ClampMin = 0, ClampMax = 100))
@@ -210,6 +223,12 @@ protected:
 	/** Called for toggle camera side input */
 	void ToggleCamera();
 
+	/** Called for target lock input */
+	void TargetLockPressed();
+
+	/** Called for switch target input */
+	void SwitchTarget(const FInputActionValue& Value);
+
 	/** BP hook to animate the camera side switch */
 	UFUNCTION(BlueprintImplementableEvent, Category="Combat")
 	void BP_ToggleCamera();
@@ -331,4 +350,7 @@ public:
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	/** Returns TargetingComponent subobject **/
+	FORCEINLINE class UCombatTargetingComponent* GetTargetingComponent() const { return TargetingComponent; }
 };
