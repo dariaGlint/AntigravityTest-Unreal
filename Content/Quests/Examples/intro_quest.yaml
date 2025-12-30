@@ -1,0 +1,28 @@
+quest:
+  id: Q001_IntroQuest
+  title: "Welcome to the World"
+  description: "Complete your first combat challenge and reach the checkpoint"
+
+  objectives:
+    - type: DefeatEnemies
+      target: BP_CombatEnemy
+      count: 5
+      description: "Defeat 5 enemies"
+
+    - type: ReachLocation
+      location: Checkpoint_01
+      description: "Reach the checkpoint"
+
+  rewards:
+    - type: Experience
+      amount: 100
+      description: "100 XP for completing the introduction"
+    - type: Item
+      item: Sword_Basic
+      count: 1
+      description: "A basic sword to start your adventure"
+
+  prerequisites:
+    - CompletedTutorial
+
+  repeatable: false
