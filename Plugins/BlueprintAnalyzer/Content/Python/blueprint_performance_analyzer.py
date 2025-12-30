@@ -1,9 +1,10 @@
 """
-Blueprint Performance Analyzer - Phase 3
+Blueprint Performance Analyzer - Phase 2 & 3 Integration
 Advanced performance analysis for Unreal Engine Blueprints
 
 This module provides detailed analysis of Blueprint assets including:
-- Performance metrics (Tick usage, heavy operations, Cast optimization)
+- Phase 2: Unreal Python API integration for real Blueprint data extraction
+- Phase 3: Performance metrics (Tick usage, heavy operations, Cast optimization)
 - Memory usage analysis
 - Best practices checks
 - Document auto-generation (Mermaid diagrams, reports)
@@ -12,9 +13,24 @@ This module provides detailed analysis of Blueprint assets including:
 import os
 import re
 import json
+import sys
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
+
+# Import Phase 2 Unreal API integration
+try:
+    from unreal_blueprint_api import (
+        UnrealBlueprintAnalyzer,
+        DetailedBlueprintMetrics,
+        UNREAL_AVAILABLE
+    )
+    PHASE2_AVAILABLE = True
+except ImportError:
+    PHASE2_AVAILABLE = False
+    UNREAL_AVAILABLE = False
+    print("Note: Phase 2 Unreal API module not available. Using Phase 3 standalone mode.")
 
 
 class IssueLevel(Enum):
@@ -164,6 +180,14 @@ class BlueprintPerformanceAnalyzer:
     def __init__(self, config_path: str = "Config/BlueprintAnalyzer.ini"):
         self.config = ConfigLoader(config_path)
         self.metrics: List[BlueprintMetrics] = []
+        self.unreal_analyzer = None
+
+        # Initialize Phase 2 analyzer if available
+        if PHASE2_AVAILABLE and UNREAL_AVAILABLE:
+            self.unreal_analyzer = UnrealBlueprintAnalyzer()
+            print("Phase 2 Unreal API integration enabled")
+        else:
+            print("Phase 2 integration unavailable - using standalone mode")
 
     def calculate_complexity_score(self, metrics: BlueprintMetrics) -> int:
         """Calculate complexity score based on various metrics"""
@@ -253,6 +277,55 @@ class BlueprintPerformanceAnalyzer:
                 score_impact=metrics.construction_script_complexity
             )
             metrics.issues.append(issue)
+
+    def convert_detailed_to_performance_metrics(self, detailed: 'DetailedBlueprintMetrics') -> BlueprintMetrics:
+        """Convert Phase 2 DetailedBlueprintMetrics to Phase 3 BlueprintMetrics"""
+        metrics = BlueprintMetrics(
+            name=detailed.name,
+            path=detailed.path,
+            tick_event_count=detailed.tick_event_count,
+            foreach_loop_count=detailed.foreach_loop_count,
+            cast_count=detailed.cast_count,
+            string_operation_count=detailed.string_operation_count,
+            array_operation_count=detailed.array_operation_count,
+            construction_script_complexity=detailed.construction_script_node_count,
+            total_node_count=detailed.total_node_count,
+            function_count=detailed.function_count,
+            event_count=detailed.event_count,
+            variable_count=detailed.variable_count
+        )
+        return metrics
+
+    def scan_blueprints_with_unreal_api(self, content_path: str = "/Game/") -> List[BlueprintMetrics]:
+        """Scan all Blueprints using Unreal Python API (Phase 2)"""
+        if not self.unreal_analyzer or not self.unreal_analyzer.is_available():
+            print("Error: Unreal Python API not available for scanning")
+            return []
+
+        print(f"Scanning Blueprints in {content_path} using Unreal Python API...")
+
+        # Get all Blueprints
+        blueprint_paths = self.unreal_analyzer.get_all_blueprints(content_path)
+        print(f"Found {len(blueprint_paths)} Blueprint(s)")
+
+        analyzed_metrics = []
+
+        for bp_path in blueprint_paths:
+            print(f"Analyzing: {bp_path}")
+
+            # Use Phase 2 to extract detailed metrics
+            detailed_metrics = self.unreal_analyzer.analyze_blueprint(bp_path)
+
+            if detailed_metrics:
+                # Convert to Phase 3 format
+                performance_metrics = self.convert_detailed_to_performance_metrics(detailed_metrics)
+
+                # Run Phase 3 performance analysis
+                analyzed = self.analyze_blueprint(performance_metrics)
+                analyzed_metrics.append(analyzed)
+
+        self.metrics.extend(analyzed_metrics)
+        return analyzed_metrics
 
     def analyze_blueprint(self, metrics: BlueprintMetrics) -> BlueprintMetrics:
         """Run all analysis checks on a Blueprint"""
@@ -419,51 +492,128 @@ class BlueprintPerformanceAnalyzer:
 
 def main():
     """Main entry point for standalone execution"""
-    print("Blueprint Performance Analyzer - Phase 3")
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Blueprint Performance Analyzer - Phase 2 & 3')
+    parser.add_argument('--config', default='Config/BlueprintAnalyzer.ini',
+                        help='Path to configuration file')
+    parser.add_argument('--output', help='Output file path for report')
+    parser.add_argument('--format', choices=['markdown', 'json', 'csv'], default='markdown',
+                        help='Output format')
+    parser.add_argument('--content-path', default='/Game/',
+                        help='Content path to scan (Unreal package path)')
+    parser.add_argument('--use-sample-data', action='store_true',
+                        help='Use sample data instead of scanning real Blueprints')
+    parser.add_argument('--generate-diagrams', action='store_true',
+                        help='Generate Mermaid diagrams')
+    parser.add_argument('--dependency-graph', action='store_true',
+                        help='Generate dependency graph (requires Phase 2)')
+
+    args = parser.parse_args()
+
+    print("Blueprint Performance Analyzer - Phase 2 & 3 Integration")
     print("=" * 60)
 
     # Initialize analyzer
-    analyzer = BlueprintPerformanceAnalyzer()
+    analyzer = BlueprintPerformanceAnalyzer(config_path=args.config)
 
-    # For demonstration, create sample metrics
-    # In actual implementation with Unreal Python API, this would scan actual Blueprints
-    sample_metrics = BlueprintMetrics(
-        name="BP_CombatCharacter",
-        path="/Game/Variant_Combat/Blueprints/BP_CombatCharacter",
-        tick_event_count=2,
-        foreach_loop_count=3,
-        cast_count=15,
-        string_operation_count=8,
-        construction_script_complexity=60,
-        total_node_count=150,
-        function_count=12,
-        event_count=8
-    )
+    if args.use_sample_data or not PHASE2_AVAILABLE or not UNREAL_AVAILABLE:
+        # Use sample data for demonstration
+        if not args.use_sample_data:
+            print("\nNote: Unreal Python API not available. Using sample data.")
+            print("To use real Blueprint data, run this script from within Unreal Editor.\n")
 
-    sample_metrics2 = BlueprintMetrics(
-        name="BP_Enemy",
-        path="/Game/Variant_Combat/Blueprints/BP_Enemy",
-        tick_event_count=1,
-        foreach_loop_count=1,
-        cast_count=5,
-        string_operation_count=2,
-        construction_script_complexity=20,
-        total_node_count=80,
-        function_count=6,
-        event_count=5
-    )
+        sample_metrics = BlueprintMetrics(
+            name="BP_CombatCharacter",
+            path="/Game/Variant_Combat/Blueprints/BP_CombatCharacter",
+            tick_event_count=2,
+            foreach_loop_count=3,
+            cast_count=15,
+            string_operation_count=8,
+            construction_script_complexity=60,
+            total_node_count=150,
+            function_count=12,
+            event_count=8
+        )
 
-    # Analyze
-    analyzer.metrics.append(analyzer.analyze_blueprint(sample_metrics))
-    analyzer.metrics.append(analyzer.analyze_blueprint(sample_metrics2))
+        sample_metrics2 = BlueprintMetrics(
+            name="BP_Enemy",
+            path="/Game/Variant_Combat/Blueprints/BP_Enemy",
+            tick_event_count=1,
+            foreach_loop_count=1,
+            cast_count=5,
+            string_operation_count=2,
+            construction_script_complexity=20,
+            total_node_count=80,
+            function_count=6,
+            event_count=5
+        )
 
-    # Generate report
-    report = analyzer.generate_performance_report()
-    print(report)
+        # Analyze
+        analyzer.metrics.append(analyzer.analyze_blueprint(sample_metrics))
+        analyzer.metrics.append(analyzer.analyze_blueprint(sample_metrics2))
+    else:
+        # Use Phase 2 Unreal Python API to scan real Blueprints
+        print(f"\nScanning Blueprints using Unreal Python API...")
+        analyzer.scan_blueprints_with_unreal_api(args.content_path)
 
-    # Generate diagrams
-    print("\n" + analyzer.generate_mermaid_diagram("hierarchy"))
-    print("\n" + analyzer.generate_mermaid_diagram("complexity"))
+    # Generate outputs based on format
+    if args.format == 'markdown':
+        # Generate report
+        report = analyzer.generate_performance_report(args.output)
+        print(report)
+
+        # Generate diagrams if requested
+        if args.generate_diagrams:
+            print("\n" + analyzer.generate_mermaid_diagram("hierarchy"))
+            print("\n" + analyzer.generate_mermaid_diagram("complexity"))
+
+    elif args.format == 'json' and analyzer.unreal_analyzer:
+        # Export using Phase 2 exporter
+        if args.output:
+            # Re-scan to get detailed metrics for JSON export
+            detailed_metrics = []
+            for metrics in analyzer.metrics:
+                if analyzer.unreal_analyzer:
+                    detailed = analyzer.unreal_analyzer.analyze_blueprint(metrics.path)
+                    if detailed:
+                        detailed_metrics.append(detailed)
+
+            if detailed_metrics:
+                analyzer.unreal_analyzer.export_to_json(detailed_metrics, args.output)
+            else:
+                print("Warning: No detailed metrics available for JSON export")
+
+    elif args.format == 'csv' and analyzer.unreal_analyzer:
+        # Export using Phase 2 exporter
+        if args.output:
+            # Re-scan to get detailed metrics for CSV export
+            detailed_metrics = []
+            for metrics in analyzer.metrics:
+                if analyzer.unreal_analyzer:
+                    detailed = analyzer.unreal_analyzer.analyze_blueprint(metrics.path)
+                    if detailed:
+                        detailed_metrics.append(detailed)
+
+            if detailed_metrics:
+                analyzer.unreal_analyzer.export_to_csv(detailed_metrics, args.output)
+            else:
+                print("Warning: No detailed metrics available for CSV export")
+
+    # Generate dependency graph if requested
+    if args.dependency_graph and analyzer.unreal_analyzer:
+        print("\nDependency Graph:")
+        # Re-scan to get detailed metrics
+        detailed_metrics = []
+        for metrics in analyzer.metrics:
+            detailed = analyzer.unreal_analyzer.analyze_blueprint(metrics.path)
+            if detailed:
+                detailed_metrics.append(detailed)
+
+        if detailed_metrics:
+            print(analyzer.unreal_analyzer.generate_dependency_graph(detailed_metrics))
+        else:
+            print("Warning: No detailed metrics available for dependency graph")
 
 
 if __name__ == "__main__":

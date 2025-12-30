@@ -24,7 +24,10 @@ ANALYSIS_TYPE="full"
 GENERATE_DIAGRAM=false
 PERFORMANCE_MODE=false
 FULL_ANALYSIS=false
+DETAILED_MODE=false
+DEPENDENCIES_MODE=false
 OUTPUT_FILE=""
+OUTPUT_FORMAT="markdown"
 FAIL_ON_CRITICAL=false
 METRICS=""
 
@@ -53,8 +56,21 @@ while [[ $# -gt 0 ]]; do
             GENERATE_DIAGRAM=true
             shift
             ;;
+        --detailed)
+            DETAILED_MODE=true
+            shift
+            ;;
+        --dependencies)
+            DEPENDENCIES_MODE=true
+            DETAILED_MODE=true
+            shift
+            ;;
         --output)
             OUTPUT_FILE="$2"
+            shift 2
+            ;;
+        --format)
+            OUTPUT_FORMAT="$2"
             shift 2
             ;;
         --fail-on-critical)
@@ -72,8 +88,11 @@ while [[ $# -gt 0 ]]; do
             echo "  --type <type>              Asset type to focus on (blueprints|ui|materials|all)"
             echo "  --diagram                  Generate Mermaid diagram"
             echo "  --performance              Run Phase 3 performance analysis"
+            echo "  --detailed                 Run Phase 2 detailed analysis (requires UE Editor)"
+            echo "  --dependencies             Generate dependency graph (requires --detailed)"
             echo "  --full-analysis            Run complete analysis (Phase 1-3)"
             echo "  --output <file>            Output report to file"
+            echo "  --format <format>          Output format: markdown, json, csv (default: markdown)"
             echo "  --fail-on-critical         Exit with error code if critical issues found"
             echo "  --metrics <list>           Specific metrics to analyze (tick,cast,loops)"
             echo "  --help                     Show this help message"
@@ -82,6 +101,11 @@ while [[ $# -gt 0 ]]; do
             echo "  Phase 1: Filesystem-based analysis (naming, structure)"
             echo "  Phase 2: Unreal Python API integration (requires UE Editor)"
             echo "  Phase 3: Performance analysis (tick, cast, loops, complexity)"
+            echo ""
+            echo "Examples:"
+            echo "  $0 --detailed --format json --output analysis.json"
+            echo "  $0 --detailed --dependencies"
+            echo "  $0 --path Content/Variant_Combat --detailed"
             exit 0
             ;;
         *)
@@ -506,6 +530,83 @@ fi
 echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}Analysis complete!${NC}"
 echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+
+# Phase 2: Detailed Analysis with Unreal Python API
+if [ "$DETAILED_MODE" = true ]; then
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}Phase 2: Detailed Blueprint Analysis${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+    echo ""
+
+    # Check if Python analyzer is available
+    PYTHON_ANALYZER="Plugins/BlueprintAnalyzer/Content/Python/blueprint_performance_analyzer.py"
+
+    if [ ! -f "$PYTHON_ANALYZER" ]; then
+        echo -e "${RED}Error: Blueprint analyzer not found at $PYTHON_ANALYZER${NC}"
+        exit 1
+    fi
+
+    # Check for python3
+    if command -v python3 &> /dev/null; then
+        PYTHON_CMD="python3"
+    elif command -v python &> /dev/null; then
+        PYTHON_CMD="python"
+    else
+        echo -e "${RED}Error: Python not found. Please install Python 3.${NC}"
+        exit 1
+    fi
+
+    echo -e "${BLUE}Running detailed Blueprint analysis...${NC}"
+    echo -e "${YELLOW}Note: Detailed analysis requires Unreal Editor to be running with Python support.${NC}"
+    echo -e "${YELLOW}If Unreal Editor is not running, sample data will be used.${NC}"
+    echo ""
+
+    # Build Python command
+    PYTHON_ARGS="--config Config/BlueprintAnalyzer.ini"
+
+    if [ -n "$OUTPUT_FILE" ]; then
+        PYTHON_ARGS="$PYTHON_ARGS --output $OUTPUT_FILE"
+    fi
+
+    if [ -n "$OUTPUT_FORMAT" ]; then
+        PYTHON_ARGS="$PYTHON_ARGS --format $OUTPUT_FORMAT"
+    fi
+
+    # Convert Content path to Unreal package path
+    # Content/Variant_Combat -> /Game/Variant_Combat
+    UNREAL_PATH="/Game"
+    if [ "$CONTENT_PATH" != "Content" ]; then
+        REL_PATH="${CONTENT_PATH#Content/}"
+        if [ -n "$REL_PATH" ]; then
+            UNREAL_PATH="/Game/$REL_PATH"
+        fi
+    fi
+    PYTHON_ARGS="$PYTHON_ARGS --content-path $UNREAL_PATH"
+
+    if [ "$GENERATE_DIAGRAM" = true ]; then
+        PYTHON_ARGS="$PYTHON_ARGS --generate-diagrams"
+    fi
+
+    if [ "$DEPENDENCIES_MODE" = true ]; then
+        PYTHON_ARGS="$PYTHON_ARGS --dependency-graph"
+    fi
+
+    # Run the Python analyzer
+    $PYTHON_CMD "$PYTHON_ANALYZER" $PYTHON_ARGS
+
+    ANALYZER_EXIT_CODE=$?
+
+    if [ $ANALYZER_EXIT_CODE -ne 0 ]; then
+        echo -e "${RED}Detailed analyzer exited with code $ANALYZER_EXIT_CODE${NC}"
+
+        if [ "$FAIL_ON_CRITICAL" = true ]; then
+            echo -e "${RED}Failing due to --fail-on-critical flag${NC}"
+            exit 1
+        fi
+    fi
+
+    echo ""
+fi
 
 # Exit with error if critical issues found and flag is set
 if [ "$FAIL_ON_CRITICAL" = true ] && [ "$PERFORMANCE_MODE" = true ]; then

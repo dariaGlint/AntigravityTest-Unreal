@@ -8,6 +8,29 @@ The Blueprint Analyzer is a comprehensive analysis tool designed to help develop
 
 ## Features
 
+### Phase 2: Unreal Python API Integration ✅ NEW
+
+- **Blueprint Internal Structure Analysis**:
+  - Node count and type breakdown
+  - Function count and details
+  - Event count and identification
+  - Variable count and types
+  - Macro detection
+  - Construction script complexity analysis
+
+- **Dependency Analysis**:
+  - Parent class relationships
+  - Implemented interfaces tracking
+  - Blueprint-to-Blueprint references
+  - Asset dependencies
+  - Dependency graph generation (Mermaid format)
+
+- **Advanced Reporting**:
+  - JSON export with full metrics
+  - CSV export for spreadsheet analysis
+  - Mermaid dependency diagrams
+  - Real Blueprint data extraction (requires Unreal Editor)
+
 ### Phase 3: Advanced Performance Analysis
 
 - **Tick Usage Detection**: Identifies EventTick usage and suggests Timer-based alternatives
@@ -28,7 +51,8 @@ The Blueprint Analyzer is included as a plugin in the project. No additional ins
 Plugins/BlueprintAnalyzer/
 ├── Content/
 │   └── Python/
-│       └── blueprint_performance_analyzer.py  # Main analyzer module
+│       ├── unreal_blueprint_api.py          # Phase 2: Unreal API integration
+│       └── blueprint_performance_analyzer.py # Phase 3: Performance analysis
 └── README.md
 ```
 
@@ -56,6 +80,27 @@ See `Config/BlueprintAnalyzer.ini` for all available options.
 
 ### Command Line
 
+#### Phase 2: Detailed Analysis (New!)
+
+```bash
+# Run detailed analysis with Unreal Python API
+./scripts/analyze-blueprints.sh --detailed
+
+# Export to JSON
+./scripts/analyze-blueprints.sh --detailed --format json --output analysis.json
+
+# Export to CSV for Excel
+./scripts/analyze-blueprints.sh --detailed --format csv --output analysis.csv
+
+# Generate dependency graph
+./scripts/analyze-blueprints.sh --detailed --dependencies
+
+# Analyze specific variant
+./scripts/analyze-blueprints.sh --path Content/Variant_Combat --detailed
+```
+
+#### Phase 3: Performance Analysis
+
 ```bash
 # Run performance analysis
 ./scripts/analyze-blueprints.sh --performance
@@ -68,6 +113,36 @@ See `Config/BlueprintAnalyzer.ini` for all available options.
 ```
 
 ### Python API
+
+#### Phase 2: Using Unreal Python API (Inside UE Editor)
+
+```python
+import sys
+sys.path.append('Plugins/BlueprintAnalyzer/Content/Python')
+
+from unreal_blueprint_api import UnrealBlueprintAnalyzer
+
+# Initialize analyzer
+analyzer = UnrealBlueprintAnalyzer()
+
+# Get all Blueprints
+blueprints = analyzer.get_all_blueprints('/Game/')
+
+# Analyze a specific Blueprint
+metrics = analyzer.analyze_blueprint('/Game/Variant_Combat/Blueprints/BP_CombatCharacter')
+print(f"Nodes: {metrics.total_node_count}")
+print(f"Functions: {metrics.function_count}")
+
+# Analyze all and export
+all_metrics = [analyzer.analyze_blueprint(bp) for bp in blueprints if analyzer.analyze_blueprint(bp)]
+analyzer.export_to_json(all_metrics, 'blueprint_report.json')
+analyzer.export_to_csv(all_metrics, 'blueprint_report.csv')
+
+# Generate dependency graph
+print(analyzer.generate_dependency_graph(all_metrics))
+```
+
+#### Phase 3: Performance Analysis
 
 ```python
 from blueprint_performance_analyzer import BlueprintPerformanceAnalyzer, BlueprintMetrics
@@ -221,28 +296,33 @@ def analyze_blueprint(self, metrics: BlueprintMetrics) -> BlueprintMetrics:
     return metrics
 ```
 
-## Phase 2 Integration (Future)
+## Phase 2 & 3 Integration ✅
 
-When Phase 2 (Unreal Python API integration) is implemented, the analyzer will automatically extract metrics from Blueprint assets using:
+Phase 2 (Unreal Python API integration) is now implemented! The analyzer automatically extracts metrics from Blueprint assets using the Unreal Engine Python API:
 
-```python
-import unreal
+**Key Features:**
+- Real Blueprint data extraction (nodes, functions, variables, events)
+- Dependency tracking (parent classes, interfaces, references)
+- Multiple export formats (JSON, CSV, Mermaid diagrams)
+- Integration with Phase 3 performance analysis
 
-# Get all Blueprint assets
-asset_registry = unreal.AssetRegistryHelpers.get_asset_registry()
-blueprints = asset_registry.get_assets_by_class("Blueprint")
+**Requirements:**
+- Unreal Editor running with Python Script Plugin enabled
+- Python 3.7+ installed
+- Running from within Unreal Editor's Python environment or using `unreal.py` wrapper
 
-for blueprint_asset in blueprints:
-    # Extract actual metrics from Blueprint
-    blueprint = blueprint_asset.get_asset()
-    # ... extract node counts, function counts, etc.
+**Usage:**
+```bash
+# Use --detailed flag to enable Phase 2 analysis
+./scripts/analyze-blueprints.sh --detailed --format json --output report.json
 ```
 
 ## Limitations
 
-- **Phase 3 Current Limitation**: Metrics are not automatically extracted from Blueprint assets. This requires Phase 2 (Unreal Python API integration).
-- **Runtime Analysis**: The analyzer does not perform runtime profiling, only static analysis.
+- **Phase 2 Requirement**: Detailed analysis requires Unreal Editor running with Python support. Without it, sample data is used.
+- **Runtime Analysis**: The analyzer performs static analysis only, not runtime profiling.
 - **Blueprint Nativization**: Does not analyze nativized Blueprints.
+- **UE Version**: Optimized for Unreal Engine 5.7, may require adjustments for other versions.
 
 ## Troubleshooting
 
