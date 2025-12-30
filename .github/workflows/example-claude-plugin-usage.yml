@@ -1,0 +1,46 @@
+# Example: How to use claude-auto-implement.yml as a plugin
+#
+# This file demonstrates how to call the reusable claude-auto-implement workflow
+# from other GitHub Actions workflows.
+
+name: Example - Claude Auto Implementation Usage
+
+on:
+  # This is just an example - you can trigger it however you want
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to comment on (optional - leave empty to auto-detect)'
+        required: false
+        type: number
+
+jobs:
+  # Example 1: Comment on a specific issue
+  comment-on-specific-issue:
+    if: github.event.inputs.issue_number != ''
+    uses: ./.github/workflows/claude-auto-implement.yml
+    with:
+      issue_number: ${{ github.event.inputs.issue_number }}
+      comment_message: '@claude pluginで使える形で実装して。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。'
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  # Example 2: Auto-detect and comment on open issues
+  auto-detect-issues:
+    if: github.event.inputs.issue_number == ''
+    uses: ./.github/workflows/claude-auto-implement.yml
+    with:
+      max_comments_per_run: 3  # Comment on up to 3 issues
+      comment_message: '@claude pluginで使える形で実装して。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。'
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  # Example 3: Custom comment message
+  custom-message:
+    if: false  # Set to true to enable
+    uses: ./.github/workflows/claude-auto-implement.yml
+    with:
+      max_comments_per_run: 1
+      comment_message: '@claude この機能を実装してください。完了したらPRを作成してください。'
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
