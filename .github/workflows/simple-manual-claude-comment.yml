@@ -1,0 +1,137 @@
+name: Simple Manual Claude Comment
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue番号 (空欄の場合は全てのopen issueをリスト表示)'
+        required: false
+        type: string
+      comment_message:
+        description: 'カスタムコメントメッセージ (オプション)'
+        required: false
+        type: string
+
+jobs:
+  process-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: List issues or comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumberInput = '${{ github.event.inputs.issue_number }}';
+            const customMessage = '${{ github.event.inputs.comment_message }}';
+            const defaultMessage = '@claude pluginで使える形で実装して。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。';
+            const commentMessage = customMessage || defaultMessage;
+
+            if (!issueNumberInput || issueNumberInput.trim() === '') {
+              // Issue番号が指定されていない場合はリスト表示
+              console.log('📋 Open Issues リスト\n');
+
+              const issues = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                sort: 'created',
+                direction: 'desc',
+                per_page: 100
+              });
+
+              const issueList = issues.data
+                .filter(issue => !issue.pull_request)
+                .map(issue => {
+                  const labels = issue.labels.map(l => l.name).join(', ');
+                  return {
+                    number: issue.number,
+                    title: issue.title,
+                    labels: labels,
+                    url: issue.html_url
+                  };
+                });
+
+              if (issueList.length === 0) {
+                console.log('❌ Open issueが見つかりませんでした。');
+              } else {
+                console.log(`✅ 全 ${issueList.length} 件のopen issues:\n`);
+                console.log('番号 | タイトル | ラベル');
+                console.log('-----|----------|--------');
+                issueList.forEach(item => {
+                  console.log(`#${item.number} | ${item.title} | ${item.labels || 'なし'}`);
+                });
+
+                console.log('\n\n📝 次のステップ:');
+                console.log('1. このワークフローを再度実行');
+                console.log('2. "Issue番号" フィールドにコメントしたいissue番号を入力');
+                console.log('   例: 46');
+                console.log('3. 必要に応じて "カスタムコメントメッセージ" を入力');
+                console.log('4. "Run workflow" をクリック');
+              }
+            } else {
+              // Issue番号が指定されている場合はコメント
+              const issueNumber = parseInt(issueNumberInput.trim());
+
+              if (isNaN(issueNumber)) {
+                core.setFailed(`無効なissue番号: ${issueNumberInput}`);
+                return;
+              }
+
+              console.log(`📝 Issue #${issueNumber} にコメントします...`);
+
+              try {
+                // Issueの取得
+                const issue = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber
+                });
+
+                // Pull Requestは除外
+                if (issue.data.pull_request) {
+                  console.log(`❌ Issue #${issueNumber} はPull Requestのため、スキップします。`);
+                  return;
+                }
+
+                console.log(`✅ Issue #${issueNumber}: ${issue.data.title}`);
+
+                // 既存のコメントをチェック
+                const comments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber
+                });
+
+                const alreadyCommented = comments.data.some(comment =>
+                  comment.body.includes('@claude')
+                );
+
+                if (alreadyCommented) {
+                  console.log(`⚠️  Issue #${issueNumber} には既にClaudeコメントが存在します。`);
+                  console.log(`続行しますか？ (強制的にコメントを追加します)`);
+                }
+
+                // コメントを投稿
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: commentMessage
+                });
+
+                console.log(`✅ Issue #${issueNumber} にコメントしました！`);
+                console.log(`メッセージ: ${commentMessage}`);
+                console.log(`URL: ${issue.data.html_url}`);
+
+              } catch (error) {
+                core.setFailed(`エラー: ${error.message}`);
+              }
+            }
