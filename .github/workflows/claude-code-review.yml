@@ -54,11 +54,14 @@ jobs:
             `gh pr comment ${{ github.event.pull_request.number }} --body "@claude 以下の問題を修正してください：\n\n[問題点のリスト]"` を実行してください。
 
             **問題がない場合:**
-            `gh pr comment ${{ github.event.pull_request.number }} --body "レビュー完了: 問題ありません。マージ可能です。"` を実行してください。
+            以下の3つのコマンドを順番に実行してください：
+            1. `gh pr review ${{ github.event.pull_request.number }} --approve --body "自動レビュー完了: コード品質、セキュリティ、パフォーマンスの観点から問題ありません。承認します。"`
+            2. `gh pr comment ${{ github.event.pull_request.number }} --body "✅ レビュー完了: 問題ありません。自動マージを実行します。"`
+            3. `gh pr merge ${{ github.event.pull_request.number }} --squash --auto --delete-branch`
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr review:*),Bash(gh pr merge:*)"'
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
 
