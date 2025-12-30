@@ -1,0 +1,171 @@
+name: Claude Auto Implementation Plugin
+
+on:
+  workflow_call:
+    inputs:
+      issue_number:
+        description: 'Issue number to comment on'
+        required: false
+        type: number
+      max_comments_per_run:
+        description: 'Maximum number of issues to comment on per run'
+        required: false
+        type: number
+        default: 1
+      comment_message:
+        description: 'Custom comment message to post'
+        required: false
+        type: string
+        default: '@claude pluginで使える形で実装して。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。'
+    secrets:
+      PAT_TOKEN:
+        description: 'Personal Access Token for GitHub API'
+        required: false
+
+jobs:
+  auto-implement:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Comment on issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = ${{ inputs.issue_number || 'null' }};
+            const maxCommentsPerRun = ${{ inputs.max_comments_per_run }};
+            const commentMessage = `${{ inputs.comment_message }}`;
+
+            if (issueNumber) {
+              // 特定のissueにコメント
+              console.log(`Commenting on issue #${issueNumber}`);
+
+              const issue = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber
+              });
+
+              // Pull Requestは除外
+              if (issue.data.pull_request) {
+                console.log(`Issue #${issueNumber} is a Pull Request, skipping.`);
+                return;
+              }
+
+              // 既にコメントされているかチェック
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber
+              });
+
+              const alreadyCommented = comments.data.some(comment =>
+                comment.body.includes('@claude')
+              );
+
+              if (alreadyCommented) {
+                console.log(`Issue #${issueNumber} already has Claude comment, skipping.`);
+                return;
+              }
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: commentMessage
+              });
+
+              console.log(`Commented on issue #${issueNumber}`);
+            } else {
+              // すべてのopenなissueをチェック
+              console.log(`Checking all open issues for Claude responses...`);
+
+              const issues = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                sort: 'created',
+                direction: 'desc',
+                per_page: 100
+              });
+
+              let commentedCount = 0;
+
+              for (const issue of issues.data) {
+                if (commentedCount >= maxCommentsPerRun) {
+                  console.log(`Reached maximum comments per run (${maxCommentsPerRun}), stopping.`);
+                  break;
+                }
+
+                // Pull Requestは除外
+                if (issue.pull_request) continue;
+
+                // このissueに紐づくPull Requestがあるかチェック
+                const linkedPRs = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'all',
+                  per_page: 100
+                });
+
+                const hasLinkedPR = linkedPRs.data.some(pr => {
+                  const prBody = pr.body || '';
+                  const prTitle = pr.title || '';
+                  const issueRef = `#${issue.number}`;
+                  const issueRefLong = `${context.repo.owner}/${context.repo.repo}#${issue.number}`;
+                  return prBody.includes(issueRef) || prBody.includes(issueRefLong) ||
+                         prTitle.includes(issueRef) || prTitle.includes(issueRefLong);
+                });
+
+                if (hasLinkedPR) {
+                  console.log(`Issue #${issue.number} has linked PR, skipping.`);
+                  continue;
+                }
+
+                // 既にコメントされているかチェック
+                const comments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number
+                });
+
+                const alreadyCommented = comments.data.some(comment =>
+                  comment.body.includes('@claude 実装して')
+                );
+
+                // Claudeからのコメント（反応）があるかチェック
+                const hasClaudeResponse = comments.data.some(comment => {
+                  const isClaudeBot = comment.user.login === 'claude' ||
+                                     comment.user.login === 'claude[bot]' ||
+                                     comment.user.login === 'claude-ai[bot]' ||
+                                     comment.user.login === 'anthropics-claude[bot]';
+                  return isClaudeBot;
+                });
+
+                if (alreadyCommented && hasClaudeResponse) {
+                  console.log(`Issue #${issue.number} already has Claude response, skipping.`);
+                  continue;
+                }
+
+                if (!alreadyCommented || !hasClaudeResponse) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: commentMessage
+                  });
+
+                  console.log(`Commented on issue #${issue.number}: ${issue.title}`);
+                  commentedCount++;
+                }
+              }
+
+              console.log(`Total issues commented: ${commentedCount}`);
+            }
