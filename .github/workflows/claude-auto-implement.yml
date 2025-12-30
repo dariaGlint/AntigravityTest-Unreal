@@ -16,7 +16,7 @@ on:
         description: 'Custom comment message to post'
         required: false
         type: string
-        default: '@claude pluginで使える形で実装して。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。'
+        default: '@claude 実装して。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。'
     secrets:
       PAT_TOKEN:
         description: 'Personal Access Token for GitHub API'
@@ -41,7 +41,30 @@ jobs:
           script: |
             const issueNumber = ${{ inputs.issue_number || 'null' }};
             const maxCommentsPerRun = ${{ inputs.max_comments_per_run }};
-            const commentMessage = `${{ inputs.comment_message }}`;
+            const baseCommentMessage = `${{ inputs.comment_message }}`;
+
+            // ラベルに基づいてコメントメッセージをカスタマイズする関数
+            function buildCommentMessage(issue) {
+              const labels = issue.labels.map(l => l.name);
+              const hasUE5 = labels.includes('UE5');
+              const hasFeature = labels.includes('feature');
+
+              let message = '@claude ';
+
+              // UE5 + feature ラベルがある場合は "pluginで使える形で" を追加
+              if (hasUE5 && hasFeature) {
+                message += 'pluginで使える形で実装して。';
+              } else {
+                message += '実装して。';
+              }
+
+              message += '実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。';
+
+              console.log(`Labels: ${labels.join(', ')}`);
+              console.log(`Custom message: ${message}`);
+
+              return message;
+            }
 
             if (issueNumber) {
               // 特定のissueにコメント
@@ -74,6 +97,9 @@ jobs:
                 console.log(`Issue #${issueNumber} already has Claude comment, skipping.`);
                 return;
               }
+
+              // ラベルに基づいてメッセージをカスタマイズ
+              const commentMessage = buildCommentMessage(issue.data);
 
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -155,6 +181,9 @@ jobs:
                 }
 
                 if (!alreadyCommented || !hasClaudeResponse) {
+                  // ラベルに基づいてメッセージをカスタマイズ
+                  const commentMessage = buildCommentMessage(issue);
+
                   await github.rest.issues.createComment({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
