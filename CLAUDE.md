@@ -83,7 +83,7 @@ AntigravityTest/
 
 - **関数名**: PascalCase
   - 例: `BeginPlay()`, `SetupPlayerInputComponent()`, `ApplyDamage()`
-  - Blueprint呼び出し可能関数の接頭辞: `Do`（例: `DoMove()`, `DoLook()`）
+  - Blueprint呼び出し可能関数の接頭辞（プロジェクト固有の規約）: `Do`（例: `DoMove()`, `DoLook()`）
   - Blueprintイベントの接頭辞: `BP_`（例: `BP_ToggleCamera()`）
 
 - **変数名**:
@@ -103,7 +103,7 @@ float MaxHP = 5.0f;
 
 // Blueprintから読み取り専用
 UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
-USpringArmComponent* CameraBoom;
+TObjectPtr<USpringArmComponent> CameraBoom;
 
 // Blueprintから読み書き可能
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Damage")
@@ -133,7 +133,14 @@ void BP_ToggleCamera();
 // Blueprint実装可能、C++でデフォルト実装あり
 UFUNCTION(BlueprintNativeEvent, Category="Combat")
 void OnDamageReceived(float Damage);
+
+// C++での実装は _Implementation サフィックスを付ける
+virtual void OnDamageReceived_Implementation(float Damage);
 ```
+
+**BlueprintNativeEvent vs BlueprintImplementableEvent の使い分け**:
+- `BlueprintImplementableEvent`: Blueprint専用イベント。C++実装は不要で、Blueprintでのみ実装する
+- `BlueprintNativeEvent`: C++でデフォルト実装を提供し、Blueprintでオーバーライド可能。C++実装には`_Implementation`サフィックスが必須
 
 ### Blueprint命名規約
 
@@ -179,6 +186,8 @@ Build.bat
   AntigravityTestEditor Win64 Development -Project="%~dp0AntigravityTest.uproject" -WaitMutex -FromMsBuild
 ```
 
+**注意**: GitHub Actions等のCI環境では、上記のWindowsパスは使用できません。CI環境ではUnreal Engineのパスが環境変数として設定されているか、Linuxビルドエージェントを使用します。
+
 #### エディタ起動
 ```bat
 # Windowsでエディタ起動
@@ -216,7 +225,7 @@ LaunchEditor.bat
 ```cpp
 // Input Actionの定義
 UPROPERTY(EditAnywhere, Category="Input")
-UInputAction* MoveAction;
+TObjectPtr<UInputAction> MoveAction;
 
 // SetupPlayerInputComponentでバインド
 void ACombatCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -237,7 +246,25 @@ void ACombatCharacter::Move(const FInputActionValue& Value)
 
 #### インターフェース実装
 ```cpp
-// インターフェース定義
+// インターフェースクラスの定義例
+UINTERFACE(MinimalAPI, Blueprintable)
+class UCombatDamageable : public UInterface
+{
+    GENERATED_BODY()
+};
+
+class ICombatDamageable
+{
+    GENERATED_BODY()
+
+public:
+    // インターフェースメソッドの宣言
+    virtual void ApplyDamage(float Damage, AActor* DamageCauser,
+                            const FVector& DamageLocation,
+                            const FVector& DamageImpulse) = 0;
+};
+
+// インターフェースを実装するクラス
 UCLASS(abstract)
 class ACombatCharacter : public ACharacter, public ICombatAttacker, public ICombatDamageable
 {
@@ -272,11 +299,12 @@ class ACombatCharacter : public ACharacter, public ICombatAttacker, public IComb
 - `AddToRoot()`/`RemoveFromRoot()`は最終手段として使用
 
 ```cpp
-// 良い例
+// 良い例 - メンバ変数として保持する場合
 UPROPERTY()
 TObjectPtr<UCombatLifeBar> LifeBarWidget;
 
-// 悪い例（GCされる可能性あり）
+// 注意が必要な例 - UPROPERTYなしではGCされる可能性あり
+// ローカル一時変数や他のUPROPERTYで保持されているオブジェクトへの参照なら問題なし
 UCombatLifeBar* LifeBarWidget;  // UPROPERTY()なし
 ```
 
