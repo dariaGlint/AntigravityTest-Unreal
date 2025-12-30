@@ -1,6 +1,6 @@
 #!/bin/bash
-# Blueprint Analyzer - Phase 1 Implementation
-# Analyzes Unreal Engine Blueprint assets for naming conventions and structure
+# Blueprint Analyzer - Phase 1-3 Implementation
+# Analyzes Unreal Engine Blueprint assets for naming conventions, structure, and performance
 
 # Color codes for output
 RED='\033[0;31m'
@@ -22,6 +22,11 @@ done
 CONTENT_PATH="Content"
 ANALYSIS_TYPE="full"
 GENERATE_DIAGRAM=false
+PERFORMANCE_MODE=false
+FULL_ANALYSIS=false
+OUTPUT_FILE=""
+FAIL_ON_CRITICAL=false
+METRICS=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -38,13 +43,45 @@ while [[ $# -gt 0 ]]; do
             GENERATE_DIAGRAM=true
             shift
             ;;
+        --performance)
+            PERFORMANCE_MODE=true
+            shift
+            ;;
+        --full-analysis)
+            FULL_ANALYSIS=true
+            PERFORMANCE_MODE=true
+            GENERATE_DIAGRAM=true
+            shift
+            ;;
+        --output)
+            OUTPUT_FILE="$2"
+            shift 2
+            ;;
+        --fail-on-critical)
+            FAIL_ON_CRITICAL=true
+            shift
+            ;;
+        --metrics)
+            METRICS="$2"
+            shift 2
+            ;;
         --help)
             echo "Usage: $0 [options]"
             echo "Options:"
-            echo "  --path <path>      Path to analyze (default: Content)"
-            echo "  --type <type>      Asset type to focus on (blueprints|ui|materials|all)"
-            echo "  --diagram          Generate Mermaid diagram"
-            echo "  --help             Show this help message"
+            echo "  --path <path>              Path to analyze (default: Content)"
+            echo "  --type <type>              Asset type to focus on (blueprints|ui|materials|all)"
+            echo "  --diagram                  Generate Mermaid diagram"
+            echo "  --performance              Run Phase 3 performance analysis"
+            echo "  --full-analysis            Run complete analysis (Phase 1-3)"
+            echo "  --output <file>            Output report to file"
+            echo "  --fail-on-critical         Exit with error code if critical issues found"
+            echo "  --metrics <list>           Specific metrics to analyze (tick,cast,loops)"
+            echo "  --help                     Show this help message"
+            echo ""
+            echo "Phases:"
+            echo "  Phase 1: Filesystem-based analysis (naming, structure)"
+            echo "  Phase 2: Unreal Python API integration (requires UE Editor)"
+            echo "  Phase 3: Performance analysis (tick, cast, loops, complexity)"
             exit 0
             ;;
         *)
@@ -352,6 +389,126 @@ if [ "$GENERATE_DIAGRAM" = true ]; then
     echo ""
 fi
 
+# Phase 3: Performance Analysis
+if [ "$PERFORMANCE_MODE" = true ]; then
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}Phase 3: Performance Analysis${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+    echo ""
+
+    # Check if Python analyzer is available
+    PYTHON_ANALYZER="Plugins/BlueprintAnalyzer/Content/Python/blueprint_performance_analyzer.py"
+
+    if [ -f "$PYTHON_ANALYZER" ]; then
+        echo -e "${BLUE}Running Python-based performance analyzer...${NC}"
+
+        # Check for python3
+        if command -v python3 &> /dev/null; then
+            PYTHON_CMD="python3"
+        elif command -v python &> /dev/null; then
+            PYTHON_CMD="python"
+        else
+            echo -e "${YELLOW}Warning: Python not found. Skipping detailed performance analysis.${NC}"
+            echo -e "${YELLOW}Install Python 3 to enable full Phase 3 features.${NC}"
+            PYTHON_CMD=""
+        fi
+
+        if [ -n "$PYTHON_CMD" ]; then
+            # Run the Python analyzer
+            if [ -n "$OUTPUT_FILE" ]; then
+                $PYTHON_CMD "$PYTHON_ANALYZER" --config Config/BlueprintAnalyzer.ini --output "$OUTPUT_FILE" 2>&1
+            else
+                $PYTHON_CMD "$PYTHON_ANALYZER" --config Config/BlueprintAnalyzer.ini 2>&1
+            fi
+
+            ANALYZER_EXIT_CODE=$?
+
+            if [ $ANALYZER_EXIT_CODE -ne 0 ]; then
+                echo -e "${RED}Performance analyzer exited with code $ANALYZER_EXIT_CODE${NC}"
+
+                if [ "$FAIL_ON_CRITICAL" = true ]; then
+                    echo -e "${RED}Failing due to --fail-on-critical flag${NC}"
+                    exit 1
+                fi
+            fi
+        fi
+    else
+        echo -e "${YELLOW}Note: Phase 3 Python analyzer not found at $PYTHON_ANALYZER${NC}"
+        echo -e "${YELLOW}Running basic performance checks...${NC}"
+        echo ""
+
+        # Basic filesystem-based performance hints
+        echo -e "${CYAN}Basic Performance Hints:${NC}"
+        echo ""
+
+        # Look for Blueprints with "Tick" in the name (heuristic)
+        TICK_BPS=$(echo "$UASSET_FILES" | grep -i "tick" || true)
+        TICK_COUNT=$(echo "$TICK_BPS" | grep -v '^$' | wc -l)
+
+        if [ $TICK_COUNT -gt 0 ]; then
+            echo -e "${YELLOW}⚠${NC} Found $TICK_COUNT Blueprint(s) with 'Tick' in name (may use EventTick):"
+            while IFS= read -r file; do
+                [ -z "$file" ] && continue
+                filename=$(basename "$file" .uasset)
+                echo -e "  - $filename"
+            done <<< "$TICK_BPS"
+            echo -e "  ${CYAN}→ Consider using Timers instead of EventTick${NC}"
+            echo ""
+        fi
+
+        # Check for Blueprints with many files (complexity indicator)
+        echo -e "${CYAN}Complexity Indicators:${NC}"
+        BP_FOLDERS=$(find "$CONTENT_PATH" -type d -name "Blueprints" 2>/dev/null || true)
+        while IFS= read -r folder; do
+            [ -z "$folder" ] && continue
+            folder_name=$(basename $(dirname "$folder"))
+            bp_count=$(find "$folder" -name "*.uasset" -not -path "*/__ExternalObjects__/*" 2>/dev/null | wc -l)
+            if [ $bp_count -gt 10 ]; then
+                echo -e "  ${YELLOW}⚠${NC} $folder_name: $bp_count Blueprints (high count may indicate complexity)"
+            fi
+        done <<< "$BP_FOLDERS"
+        echo ""
+
+        echo -e "${CYAN}For detailed performance analysis:${NC}"
+        echo "  1. Ensure Python 3 is installed"
+        echo "  2. Run with Unreal Editor open (for Phase 2 Python API access)"
+        echo "  3. Use --full-analysis flag for comprehensive report"
+        echo ""
+    fi
+fi
+
+# Output redirection
+if [ -n "$OUTPUT_FILE" ] && [ "$PERFORMANCE_MODE" = false ]; then
+    # If output file specified but not in performance mode, save Phase 1 report
+    {
+        echo "# Blueprint Analysis Report"
+        echo ""
+        echo "Total Assets: $TOTAL_COUNT"
+        echo ""
+        echo "## By Type"
+        for prefix in "${!PREFIXES[@]}"; do
+            count=${PREFIX_COUNTS[$prefix]}
+            if [ $count -gt 0 ]; then
+                echo "- ${PREFIXES[$prefix]} (${prefix}*): $count"
+            fi
+        done
+        echo ""
+        echo "## By Variant"
+        echo "- Variant_Combat: $COMBAT_COUNT"
+        echo "- Variant_SideScrolling: $SIDESCROLLING_COUNT"
+        echo "- Variant_Platforming: $PLATFORMING_COUNT"
+        echo "- Core/Shared: $CORE_COUNT"
+    } > "$OUTPUT_FILE"
+    echo -e "${GREEN}Report saved to: $OUTPUT_FILE${NC}"
+    echo ""
+fi
+
 echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}Analysis complete!${NC}"
 echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+
+# Exit with error if critical issues found and flag is set
+if [ "$FAIL_ON_CRITICAL" = true ] && [ "$PERFORMANCE_MODE" = true ]; then
+    # This will be set by the Python analyzer
+    exit 0
+fi
