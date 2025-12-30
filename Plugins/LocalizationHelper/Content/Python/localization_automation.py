@@ -1,6 +1,9 @@
 """
 Localization Automation Script for Unreal Engine 5
 Provides Python-based automation for localization workflow
+
+Note: This is a Phase 4 implementation placeholder.
+Core functionality should be implemented after Phase 1-3 are complete.
 """
 
 import unreal
@@ -12,8 +15,13 @@ class LocalizationAutomation:
     """Main automation class for localization tasks"""
 
     def __init__(self):
-        self.editor_utility = unreal.EditorUtilityLibrary()
-        self.string_table_library = unreal.StringTableLibrary()
+        """Initialize the localization automation system"""
+        try:
+            self.editor_utility = unreal.EditorUtilityLibrary()
+            # Note: StringTableLibrary is accessed as a static class, not instantiated
+            # We'll use unreal.StringTableLibrary directly in methods
+        except Exception as e:
+            unreal.log_error(f"Failed to initialize LocalizationAutomation: {e}")
 
     def extract_texts_from_project(self, project_path, output_csv):
         """
@@ -23,19 +31,22 @@ class LocalizationAutomation:
             project_path (str): Path to project root
             output_csv (str): Output CSV file path
         """
-        unreal.log("Starting text extraction from project...")
+        try:
+            unreal.log("Starting text extraction from project...")
 
-        # TODO: Implement full text extraction
-        # This would involve:
-        # 1. Scanning Blueprint assets
-        # 2. Scanning C++ source files
-        # 3. Scanning data assets
+            # Phase 4: Full text extraction
+            # This would involve:
+            # 1. Using ULocalizationTextExtractor::ExtractAllTexts from C++
+            # 2. Scanning Blueprint assets using AssetRegistry
+            # 3. Scanning data assets for FText properties
 
-        extracted_texts = []
+            extracted_texts = []
 
-        # Export to CSV
-        self._export_to_csv(extracted_texts, output_csv)
-        unreal.log(f"Text extraction completed. Output: {output_csv}")
+            # Export to CSV with error handling
+            self._export_to_csv(extracted_texts, output_csv)
+            unreal.log(f"Text extraction completed. Output: {output_csv}")
+        except Exception as e:
+            unreal.log_error(f"Error during text extraction: {e}")
 
     def create_string_table(self, csv_path, string_table_name, output_path):
         """
@@ -46,12 +57,16 @@ class LocalizationAutomation:
             string_table_name (str): Name for the StringTable
             output_path (str): Output path for StringTable
         """
-        unreal.log(f"Creating StringTable '{string_table_name}' from {csv_path}...")
+        try:
+            unreal.log(f"Creating StringTable '{string_table_name}' from {csv_path}...")
 
-        # TODO: Implement StringTable creation
-        # This would use unreal.StringTableLibrary to create and populate StringTable
+            # Phase 4: StringTable creation
+            # This would use ULocalizationStringTableManager::CreateStringTableFromCSV
+            # or unreal.StringTableLibrary to create and populate StringTable
 
-        unreal.log(f"StringTable created: {output_path}")
+            unreal.log(f"StringTable created: {output_path}")
+        except Exception as e:
+            unreal.log_error(f"Error creating StringTable: {e}")
 
     def translate_texts(self, source_csv, target_language, output_csv):
         """
@@ -62,12 +77,16 @@ class LocalizationAutomation:
             target_language (str): Target language code (e.g., 'ja', 'zh-Hans')
             output_csv (str): Output CSV with translations
         """
-        unreal.log(f"Generating translations to {target_language}...")
+        try:
+            unreal.log(f"Generating translations to {target_language}...")
 
-        # TODO: Implement machine translation integration
-        # This could integrate with Google Translate API or other services
+            # Phase 4: Machine translation integration
+            # This could integrate with Google Translate API, DeepL, or other services
+            # Requires external API keys and network access
 
-        unreal.log(f"Translations generated: {output_csv}")
+            unreal.log(f"Translations generated: {output_csv}")
+        except Exception as e:
+            unreal.log_error(f"Error generating translations: {e}")
 
     def validate_translations(self, string_table_path, target_language):
         """
@@ -80,18 +99,23 @@ class LocalizationAutomation:
         Returns:
             dict: Validation results with issues found
         """
-        unreal.log(f"Validating translations for {target_language}...")
+        try:
+            unreal.log(f"Validating translations for {target_language}...")
 
-        issues = {
-            'missing_translations': [],
-            'placeholder_mismatches': [],
-            'length_warnings': []
-        }
+            issues = {
+                'missing_translations': [],
+                'placeholder_mismatches': [],
+                'length_warnings': []
+            }
 
-        # TODO: Implement validation logic
+            # Phase 4: Validation logic
+            # This would use ULocalizationTranslationManager functions
 
-        unreal.log(f"Validation completed. Issues found: {len(issues['missing_translations'])}")
-        return issues
+            unreal.log(f"Validation completed. Issues found: {len(issues['missing_translations'])}")
+            return issues
+        except Exception as e:
+            unreal.log_error(f"Error validating translations: {e}")
+            return {'error': str(e)}
 
     def find_unused_strings(self, string_table_path, project_path):
         """
@@ -104,15 +128,20 @@ class LocalizationAutomation:
         Returns:
             list: List of unused entry keys
         """
-        unreal.log("Searching for unused StringTable entries...")
+        try:
+            unreal.log("Searching for unused StringTable entries...")
 
-        unused_keys = []
+            unused_keys = []
 
-        # TODO: Implement unused entry detection
-        # This would search project files for references
+            # Phase 4: Unused entry detection
+            # This would use ULocalizationStringTableManager::FindUnusedEntries
+            # to search project files for references
 
-        unreal.log(f"Search completed. Unused entries: {len(unused_keys)}")
-        return unused_keys
+            unreal.log(f"Search completed. Unused entries: {len(unused_keys)}")
+            return unused_keys
+        except Exception as e:
+            unreal.log_error(f"Error finding unused strings: {e}")
+            return []
 
     def generate_translation_report(self, string_table_path, output_path):
         """
@@ -122,21 +151,29 @@ class LocalizationAutomation:
             string_table_path (str): Path to StringTable
             output_path (str): Output path for report (JSON/HTML)
         """
-        unreal.log("Generating translation progress report...")
+        try:
+            unreal.log("Generating translation progress report...")
 
-        report = {
-            'total_entries': 0,
-            'languages': {},
-            'completion': {}
-        }
+            report = {
+                'total_entries': 0,
+                'languages': {},
+                'completion': {}
+            }
 
-        # TODO: Implement report generation
+            # Phase 4: Report generation
+            # This would collect data from StringTable and format it
 
-        # Save report
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(report, f, indent=2, ensure_ascii=False)
+            # Save report with error handling
+            try:
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(report, f, indent=2, ensure_ascii=False)
+            except IOError as e:
+                unreal.log_error(f"Failed to write report file: {e}")
+                return
 
-        unreal.log(f"Report generated: {output_path}")
+            unreal.log(f"Report generated: {output_path}")
+        except Exception as e:
+            unreal.log_error(f"Error generating report: {e}")
 
     def _export_to_csv(self, entries, csv_path):
         """
@@ -146,17 +183,22 @@ class LocalizationAutomation:
             entries (list): List of text entries
             csv_path (str): Output CSV path
         """
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['Key', 'SourceString', 'Context', 'Location'])
+        try:
+            with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Key', 'SourceString', 'Context', 'Location'])
 
-            for entry in entries:
-                writer.writerow([
-                    entry.get('key', ''),
-                    entry.get('source_string', ''),
-                    entry.get('context', ''),
-                    entry.get('location', '')
-                ])
+                for entry in entries:
+                    writer.writerow([
+                        entry.get('key', ''),
+                        entry.get('source_string', ''),
+                        entry.get('context', ''),
+                        entry.get('location', '')
+                    ])
+        except IOError as e:
+            unreal.log_error(f"Failed to write CSV file: {e}")
+        except Exception as e:
+            unreal.log_error(f"Unexpected error writing CSV: {e}")
 
 
 # Command-line interface functions

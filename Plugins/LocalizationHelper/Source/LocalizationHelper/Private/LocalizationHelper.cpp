@@ -2,16 +2,19 @@
 
 #define LOCTEXT_NAMESPACE "FLocalizationHelperModule"
 
+// Define log category for LocalizationHelper plugin
+DEFINE_LOG_CATEGORY(LogLocalizationHelper);
+
 void FLocalizationHelperModule::StartupModule()
 {
 	// Module initialization logic here
-	UE_LOG(LogTemp, Log, TEXT("LocalizationHelper module started"));
+	UE_LOG(LogLocalizationHelper, Log, TEXT("LocalizationHelper module started"));
 }
 
 void FLocalizationHelperModule::ShutdownModule()
 {
 	// Module shutdown logic here
-	UE_LOG(LogTemp, Log, TEXT("LocalizationHelper module shutdown"));
+	UE_LOG(LogLocalizationHelper, Log, TEXT("LocalizationHelper module shutdown"));
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -1,20 +1,27 @@
 #include "LocalizationTranslationManager.h"
+#include "LocalizationHelper.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 
 bool ULocalizationTranslationManager::ExportForTranslation(const FString& StringTablePath, const FString& SourceLanguage, const FString& OutputPath)
 {
-	// TODO: Implement StringTable export to CSV
-	// This would include context information for translators
-	UE_LOG(LogTemp, Warning, TEXT("ExportForTranslation not yet fully implemented"));
+	// Phase 3: StringTable export to CSV for translation
+	// This would:
+	// 1. Load StringTable
+	// 2. Export entries with context information for translators
+	// 3. Include metadata like character limits, formatting rules
+	UE_LOG(LogLocalizationHelper, Warning, TEXT("ExportForTranslation is a Phase 3 feature - not yet implemented"));
 	return false;
 }
 
 bool ULocalizationTranslationManager::ImportTranslations(const FString& CSVPath, const FString& StringTablePath, const FString& TargetLanguage)
 {
-	// TODO: Implement translation import from CSV
-	// This would validate and import translations into the StringTable
-	UE_LOG(LogTemp, Warning, TEXT("ImportTranslations not yet fully implemented"));
+	// Phase 3: Translation import from CSV
+	// This would:
+	// 1. Read CSV file with translations
+	// 2. Validate translations (placeholders, length, etc.)
+	// 3. Update StringTable with validated translations
+	UE_LOG(LogLocalizationHelper, Warning, TEXT("ImportTranslations is a Phase 3 feature - not yet implemented"));
 	return false;
 }
 
@@ -22,68 +29,79 @@ TArray<FString> ULocalizationTranslationManager::FindMissingTranslations(const F
 {
 	TArray<FString> MissingKeys;
 
-	// TODO: Implement missing translation detection
-	UE_LOG(LogTemp, Warning, TEXT("FindMissingTranslations not yet fully implemented"));
+	// Phase 3: Missing translation detection
+	// This would:
+	// 1. Load StringTable
+	// 2. Check which keys have no translation for target language
+	// 3. Return list of keys needing translation
+	UE_LOG(LogLocalizationHelper, Warning, TEXT("FindMissingTranslations is a Phase 3 feature - not yet implemented"));
 
 	return MissingKeys;
 }
 
 float ULocalizationTranslationManager::GetTranslationProgress(const FString& StringTablePath, const FString& TargetLanguage)
 {
-	// TODO: Calculate translation progress
-	// Returns percentage of translated entries
-	UE_LOG(LogTemp, Warning, TEXT("GetTranslationProgress not yet fully implemented"));
+	// Phase 3: Calculate translation progress
+	// This would:
+	// 1. Load StringTable
+	// 2. Count total entries vs translated entries
+	// 3. Return percentage (0.0 to 100.0)
+	UE_LOG(LogLocalizationHelper, Warning, TEXT("GetTranslationProgress is a Phase 3 feature - not yet implemented"));
 	return 0.0f;
+}
+
+// Optimized helper function to extract placeholders from text
+static void ExtractPlaceholders(const FString& Text, TSet<FString>& OutPlaceholders)
+{
+	// Find all placeholders in text (e.g., {0}, {1}, {PlayerName})
+	// Using single pass through the string for better performance
+
+	int32 Index = 0;
+	const int32 TextLen = Text.Len();
+
+	while (Index < TextLen)
+	{
+		// Find opening brace
+		int32 StartIndex = Text.Find(TEXT("{"), ESearchCase::IgnoreCase, ESearchDir::FromStart, Index);
+		if (StartIndex == INDEX_NONE)
+			break;
+
+		// Find closing brace
+		int32 EndIndex = Text.Find(TEXT("}"), ESearchCase::IgnoreCase, ESearchDir::FromStart, StartIndex + 1);
+		if (EndIndex == INDEX_NONE)
+			break;
+
+		// Extract placeholder including braces
+		FString Placeholder = Text.Mid(StartIndex, EndIndex - StartIndex + 1);
+		OutPlaceholders.Add(Placeholder);
+
+		// Continue search after this placeholder
+		Index = EndIndex + 1;
+	}
 }
 
 bool ULocalizationTranslationManager::ValidatePlaceholders(const FString& SourceText, const FString& TranslatedText)
 {
-	// Find all placeholders in source text (e.g., {0}, {1}, {PlayerName})
-	TArray<FString> SourcePlaceholders;
-	TArray<FString> TranslatedPlaceholders;
+	// Extract placeholders from both texts using optimized single-pass algorithm
+	TSet<FString> SourcePlaceholders;
+	TSet<FString> TranslatedPlaceholders;
 
-	// Simple regex-like search for {xxx} patterns
-	int32 Index = 0;
-	while (Index < SourceText.Len())
-	{
-		int32 StartIndex = SourceText.Find(TEXT("{"), ESearchCase::IgnoreCase, ESearchDir::FromStart, Index);
-		if (StartIndex == INDEX_NONE)
-			break;
+	ExtractPlaceholders(SourceText, SourcePlaceholders);
+	ExtractPlaceholders(TranslatedText, TranslatedPlaceholders);
 
-		int32 EndIndex = SourceText.Find(TEXT("}"), ESearchCase::IgnoreCase, ESearchDir::FromStart, StartIndex);
-		if (EndIndex == INDEX_NONE)
-			break;
-
-		FString Placeholder = SourceText.Mid(StartIndex, EndIndex - StartIndex + 1);
-		SourcePlaceholders.AddUnique(Placeholder);
-		Index = EndIndex + 1;
-	}
-
-	// Same for translated text
-	Index = 0;
-	while (Index < TranslatedText.Len())
-	{
-		int32 StartIndex = TranslatedText.Find(TEXT("{"), ESearchCase::IgnoreCase, ESearchDir::FromStart, Index);
-		if (StartIndex == INDEX_NONE)
-			break;
-
-		int32 EndIndex = TranslatedText.Find(TEXT("}"), ESearchCase::IgnoreCase, ESearchDir::FromStart, StartIndex);
-		if (EndIndex == INDEX_NONE)
-			break;
-
-		FString Placeholder = TranslatedText.Mid(StartIndex, EndIndex - StartIndex + 1);
-		TranslatedPlaceholders.AddUnique(Placeholder);
-		Index = EndIndex + 1;
-	}
-
-	// Check if placeholders match
+	// Check if placeholder sets match
 	if (SourcePlaceholders.Num() != TranslatedPlaceholders.Num())
+	{
 		return false;
+	}
 
+	// Verify all source placeholders exist in translation
 	for (const FString& SourcePlaceholder : SourcePlaceholders)
 	{
 		if (!TranslatedPlaceholders.Contains(SourcePlaceholder))
+		{
 			return false;
+		}
 	}
 
 	return true;
