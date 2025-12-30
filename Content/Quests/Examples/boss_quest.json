@@ -1,0 +1,38 @@
+{
+  "quest": {
+    "id": "Q003_DefeatBoss",
+    "title": "Defeat the Boss",
+    "description": "Face the powerful boss and prove your strength",
+    "objectives": [
+      {
+        "type": "DefeatEnemies",
+        "target": "BP_Boss_Dragon",
+        "count": 1,
+        "description": "Defeat the Dragon Boss"
+      }
+    ],
+    "rewards": [
+      {
+        "type": "Item",
+        "item": "Legendary_Sword",
+        "count": 1,
+        "description": "Legendary Dragon Slayer Sword"
+      },
+      {
+        "type": "Experience",
+        "amount": 500,
+        "description": "500 XP for defeating the boss"
+      },
+      {
+        "type": "Currency",
+        "amount": 1000,
+        "description": "1000 gold coins"
+      }
+    ],
+    "prerequisites": [
+      "Q001_IntroQuest",
+      "Q002_GatherResources"
+    ],
+    "repeatable": false
+  }
+}

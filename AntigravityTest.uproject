@@ -38,6 +38,10 @@
 		{
 			"Name": "AIAssistant",
 			"Enabled": true
+		},
+		{
+			"Name": "QuestSystem",
+			"Enabled": true
 		}
 	]
 }
