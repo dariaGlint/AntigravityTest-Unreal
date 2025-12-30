@@ -150,7 +150,7 @@ env:
 新しいIssueに自動的にコメントを投稿し、Claudeによる実装を促すワークフローです。Issueが作成されると定期的にチェックし、まだ対応されていないIssueに対して自動的に`@claude`をメンションします。
 
 #### Issue自動コメントの仕組み
-1. **定期実行**: 1時間ごとに全てのオープンなIssueをチェック
+1. **定期実行**: 毎時0分に全てのオープンなIssueをチェック
 2. **条件判定**: 以下の条件を満たすIssueにコメント：
    - Pull Requestではないこと
    - 紐付けられたPRが存在しないこと
@@ -162,7 +162,7 @@ env:
 ```yaml
 on:
   schedule:
-    - cron: '0 */1 * * *'  # 1時間ごと（UTC時間）
+    - cron: '0 */1 * * *'  # 毎時0分に実行（UTC時間）。※ */1 は * と同じ意味
   workflow_dispatch:  # 手動実行も可能
 ```
 
@@ -368,9 +368,10 @@ env:
 #### 作成手順
 1. GitHubの設定 → Developer settings → Personal access tokens → Tokens (classic)
 2. "Generate new token (classic)"をクリック
-3. 以下の権限を選択：
-   - `repo` (フルアクセス)
-   - `workflow` (ワークフロー編集)
+3. 以下の権限を選択（最小権限の原則に従う）：
+   - `repo:status` - コミットステータスへのアクセス
+   - `public_repo` - パブリックリポジトリへのアクセス（プライベートリポジトリの場合は`repo`フルアクセス）
+   - `workflow` - ワークフローの編集
 4. トークンを生成してコピー
 
 #### リポジトリへの追加
@@ -841,20 +842,54 @@ permissions:
 # ✅ 良い例: バージョンを固定
 - uses: actions/checkout@v4
 
-# ✅ さらに良い例: コミットSHAを使用
+# ✅ さらに良い例: コミットSHAを使用（最も安全）
 - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
 ```
 
+**コミットSHAの確認方法**:
+```bash
+# GitHubのリリースページでSHAを確認
+# https://github.com/{owner}/{repo}/releases
+
+# または、特定のタグのSHAをgitコマンドで確認
+git log --oneline -n 1 v4
+
+# 出力例: 8ade135 (tag: v4) Release v4.0.0
+# この場合、完全なSHA: 8ade135a41bc03ea155e62e844d188df1ea18608
+```
+
 #### 4. Pull Requestからのワークフロー実行
+
+**⚠️ `pull_request_target`の使用には重大なセキュリティリスクがあります**:
+
+- **リスク**: フォークからのPRでもSecretsにアクセス可能
+- **脅威**: 悪意のあるコードがSecretsを窃取する可能性
+- **影響範囲**: APIキー、トークン、その他の機密情報が流出する危険性
+
+**安全に使用するための必須対策**:
+
 ```yaml
 on:
-  pull_request_target:  # フォークからのPRでも実行
+  pull_request_target:  # フォークからのPRでも実行（慎重に！）
     types: [opened]
 
 jobs:
   comment:
-    # フォークからのPRには慎重に
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      # 1. 必ず信頼できるリポジトリからのPRか検証
+      - name: Verify source
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "フォークからのPRは許可されていません"
+          exit 1
+
+      # 2. PRのコードを実行する前にレビュー
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # 3. 信頼できないコードでSecretsを使用しない
 ```
 
 #### 5. コード実行の検証
@@ -869,8 +904,8 @@ jobs:
 ```
 
 #### 6. 定期的なセキュリティ監査
-- 使用していないSecretsを削除
-- トークンを定期的に再生成
+- **トークンの再生成**: 90日ごとに実施
+- **使用していないSecretsの確認**: 30日ごとに実施して削除
 - Actionsの更新を確認
 - Dependabotを有効化
 
