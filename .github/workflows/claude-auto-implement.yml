@@ -16,7 +16,7 @@ on:
         description: 'Custom comment message to post'
         required: false
         type: string
-        default: '@claude 実装して。branchを作る時はissueタイトルから推察したブランチ名にしてください。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。'
+        default: '@claude 実装して。branchを作る時はissueタイトルから推察したブランチ名にしてください。実装が終わったらgh pr createコマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。'
     secrets:
       PAT_TOKEN:
         description: 'Personal Access Token for GitHub API'
@@ -58,7 +58,7 @@ jobs:
                 message += '実装して。';
               }
 
-              message += 'branchを作る時はissueタイトルから推察したブランチ名にしてください。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。';
+              message += 'branchを作る時はissueタイトルから推察したブランチ名にしてください。実装が終わったらgh pr createコマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。';
 
               console.log(`Labels: ${labels.join(', ')}`);
               console.log(`Custom message: ${message}`);
