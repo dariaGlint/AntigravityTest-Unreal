@@ -1,0 +1,72 @@
+name: Manual Claude Comment on Issue
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'コメントモード'
+        required: true
+        type: choice
+        options:
+          - 'list-issues'
+          - 'comment-on-issue'
+        default: 'list-issues'
+      issue_number:
+        description: 'Issue番号 (comment-on-issueモード時に指定)'
+        required: false
+        type: number
+      comment_message:
+        description: 'カスタムコメントメッセージ (オプション)'
+        required: false
+        type: string
+
+jobs:
+  list-open-issues:
+    if: github.event.inputs.mode == 'list-issues'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+
+    steps:
+      - name: List all open issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('📋 Open Issues リスト\n');
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              sort: 'created',
+              direction: 'desc',
+              per_page: 100
+            });
+
+            const issueList = issues.data
+              .filter(issue => !issue.pull_request)
+              .map(issue => {
+                return `#${issue.number}: ${issue.title}`;
+              });
+
+            if (issueList.length === 0) {
+              console.log('Open issueが見つかりませんでした。');
+            } else {
+              console.log(`全 ${issueList.length} 件のopen issues:\n`);
+              issueList.forEach(item => console.log(item));
+
+              console.log('\n\n📝 コメントするには:');
+              console.log('1. このワークフローを再度実行');
+              console.log('2. モードで "comment-on-issue" を選択');
+              console.log('3. Issue番号を入力');
+            }
+
+  comment-on-specific-issue:
+    if: github.event.inputs.mode == 'comment-on-issue' && github.event.inputs.issue_number != ''
+    uses: ./.github/workflows/claude-auto-implement.yml
+    with:
+      issue_number: ${{ fromJSON(github.event.inputs.issue_number) }}
+      comment_message: ${{ github.event.inputs.comment_message != '' && github.event.inputs.comment_message || '@claude pluginで使える形で実装して。実装が終わったら`gh pr create`コマンドを使ってPullRequestをmainブランチに対して自動作成して。手動リンクは不要です。' }}
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}

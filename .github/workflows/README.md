@@ -94,6 +94,37 @@ jobs:
 - **トリガー**: cron (1時間ごと)、手動実行 (workflow_dispatch)
 - **使用プラグイン**: claude-auto-implement.yml
 
+### simple-manual-claude-comment.yml
+
+**推奨**: 手動でissueにClaude実装依頼コメントを投稿するワークフロー（最もシンプル）。
+
+- **トリガー**: workflow_dispatch (手動実行のみ)
+- **機能**:
+  - Issue番号を空欄で実行 → 全てのopen issueをリスト表示
+  - Issue番号を入力して実行 → その番号のissueにコメント投稿
+- **使い方**:
+  1. Actions タブから "Simple Manual Claude Comment" を選択
+  2. "Run workflow" をクリック
+  3. Issue番号を空欄にして実行 → issueリストを確認
+  4. 再度実行して、コメントしたいissue番号を入力
+  5. 必要に応じてカスタムメッセージを入力
+  6. "Run workflow" をクリック
+
+### manual-claude-comment.yml
+
+手動でissueにClaude実装依頼コメントを投稿するワークフロー（モード選択式）。
+
+- **トリガー**: workflow_dispatch (手動実行のみ)
+- **モード**:
+  - `list-issues`: 全てのopen issueをリスト表示
+  - `comment-on-issue`: 指定したissueにコメント投稿
+- **使い方**:
+  1. Actions タブから "Manual Claude Comment on Issue" を選択
+  2. "Run workflow" をクリック
+  3. モードで "list-issues" を選択してissueリストを確認
+  4. 再度実行して、モードで "comment-on-issue" を選択
+  5. Issue番号とメッセージを入力して実行
+
 ### claude.yml
 
 Claudeに関連するワークフロー（詳細は要確認）
