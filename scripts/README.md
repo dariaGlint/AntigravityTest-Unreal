@@ -159,6 +159,99 @@ scripts\link-plugin.bat
 # 2つのUE5プロジェクトで異なるバージョンをテスト
 ```
 
+## analyze-blueprints - Blueprint分析ツール
+
+Unreal EngineプロジェクトのBlueprintアセットを分析し、命名規則、フォルダ構造、ベストプラクティスをチェックします。
+
+### 機能
+
+**Phase 1実装（現在利用可能）:**
+- Blueprintファイルの命名規則チェック（BP_、WBP_などのプレフィックス）
+- フォルダ構造の整理状態確認
+- Blueprint一覧とカテゴリ分類
+- 基本的な統計情報（ファイル数、種類別集計、バリアント別集計）
+- 改善提案レポート
+
+### 使用方法
+
+#### Windows
+```bat
+scripts\analyze-blueprints.bat
+```
+
+#### Linux/Mac
+```bash
+./scripts/analyze-blueprints.sh
+```
+
+#### オプション
+
+```bash
+# 全体分析（デフォルト）
+./scripts/analyze-blueprints.sh
+
+# 特定のフォルダのみ分析
+./scripts/analyze-blueprints.sh --path Content/Variant_Combat/Blueprints
+
+# Mermaid図も生成
+./scripts/analyze-blueprints.sh --diagram
+
+# ヘルプ表示
+./scripts/analyze-blueprints.sh --help
+```
+
+### 出力例
+
+```
+═══════════════════════════════════════════════════════
+  Blueprint Analysis Report
+═══════════════════════════════════════════════════════
+
+Scanning for Blueprint assets...
+Found 150 assets
+
+─────────────────────────────────────────────────────
+1. Asset Statistics by Type
+─────────────────────────────────────────────────────
+
+Blueprint Classes (BP_*):     45
+Widget Blueprints (WBP_*):    12
+Materials (M_*):              30
+Material Instances (MI_*):    25
+Input Actions (IA_*):         10
+Other/Unknown:                28
+
+─────────────────────────────────────────────────────
+2. Assets by Variant
+─────────────────────────────────────────────────────
+
+Variant_Combat:               80
+Variant_SideScrolling:        20
+Variant_Platforming:          15
+Core/Shared:                  35
+```
+
+### Claude Codeから実行
+
+```
+「Blueprintを分析して」
+```
+
+これでClaude Codeが自動的に分析を実行し、レポートを表示します。
+
+### 将来の拡張予定
+
+- **Phase 2**: Unreal Python API統合による詳細分析
+  - ノード数、関数数の測定
+  - イベントグラフの複雑度分析
+  - 依存関係の抽出
+- **Phase 3**: 高度なパフォーマンス分析
+  - Tick使用状況の検出
+  - 重い処理の検出（ForEach、Cast最適化など）
+  - 自動ドキュメント生成
+
+詳細は `.claude/commands/analyze-blueprints.md` を参照してください。
+
 ## 今後追加される可能性のあるスクリプト
 
 - `build-plugin.bat/sh` - プラグインのビルド
