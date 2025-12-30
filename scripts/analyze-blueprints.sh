@@ -10,6 +10,14 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Check required commands
+for cmd in find grep wc basename dirname; do
+    if ! command -v "$cmd" &> /dev/null; then
+        echo -e "${RED}Error: Required command '$cmd' not found${NC}"
+        exit 1
+    fi
+done
+
 # Default values
 CONTENT_PATH="Content"
 ANALYSIS_TYPE="full"
@@ -46,11 +54,21 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Validate and sanitize the path
+# Remove any special characters that could be dangerous
+if [[ "$CONTENT_PATH" =~ [^\w/._-] ]]; then
+    echo -e "${RED}Error: Path contains invalid characters. Only alphanumeric, /, ., _, and - are allowed.${NC}"
+    exit 1
+fi
+
 # Check if Content directory exists
 if [ ! -d "$CONTENT_PATH" ]; then
     echo -e "${RED}Error: Content directory not found at $CONTENT_PATH${NC}"
     exit 1
 fi
+
+# Resolve to absolute path to prevent path traversal
+CONTENT_PATH=$(cd "$CONTENT_PATH" && pwd)
 
 echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
 echo -e "${CYAN}  Blueprint Analysis Report${NC}"
@@ -82,16 +100,35 @@ declare -A PREFIXES=(
     ["BPI_"]="Blueprint Interfaces"
 )
 
-# Count assets by prefix
+# Count assets by prefix (single-pass optimization)
 echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
 echo -e "${CYAN}1. Asset Statistics by Type${NC}"
 echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
 echo ""
 
 declare -A PREFIX_COUNTS
+# Initialize all counts to 0
 for prefix in "${!PREFIXES[@]}"; do
-    count=$(echo "$UASSET_FILES" | grep -o "[^/]*${prefix}[^/]*\.uasset" | wc -l)
-    PREFIX_COUNTS[$prefix]=$count
+    PREFIX_COUNTS[$prefix]=0
+done
+
+# Single pass through all files
+while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    filename=$(basename "$file")
+
+    # Check each prefix and count once
+    for prefix in "${!PREFIXES[@]}"; do
+        if [[ $filename == $prefix* ]]; then
+            ((PREFIX_COUNTS[$prefix]++))
+            break  # Only count once per file
+        fi
+    done
+done <<< "$UASSET_FILES"
+
+# Display results
+for prefix in "${!PREFIXES[@]}"; do
+    count=${PREFIX_COUNTS[$prefix]}
     if [ $count -gt 0 ]; then
         printf "${GREEN}%-25s${NC} %3d\n" "${PREFIXES[$prefix]} (${prefix}*):" "$count"
     fi

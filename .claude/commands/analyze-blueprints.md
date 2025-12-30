@@ -1,6 +1,19 @@
-# Analyze Blueprints
+# Analyze Blueprints (Phase 1)
 
 Analyze Unreal Engine Blueprints in the project for naming conventions, structure, and best practices.
+
+## ⚠️ Current Status: Phase 1 Only
+
+**Currently Implemented**: Phase 1 (filesystem-based analysis)
+- Naming convention checks
+- Folder structure analysis
+- Basic statistics and categorization
+
+**Not Yet Available**: Phase 2-3 (Python API integration, performance analysis)
+- Node count, function count measurements
+- Event graph complexity analysis
+- Tick usage detection
+- Heavy operation detection
 
 ## Instructions
 
@@ -164,12 +177,12 @@ The command can be invoked with different scopes:
 - Can run in CI/CD environment
 - Fast and lightweight
 
-### Future Phases (Not Implemented)
-- **Phase 2**: Unreal Python API integration for detailed analysis
+### Future Phases (NOT IMPLEMENTED)
+- **Phase 2 (NOT IMPLEMENTED)**: Unreal Python API integration for detailed analysis
   - Node count, function count
   - Event graph complexity
   - Dependency extraction
-- **Phase 3**: Advanced performance analysis
+- **Phase 3 (NOT IMPLEMENTED)**: Advanced performance analysis
   - Tick usage detection
   - Heavy operation detection (ForEach, Cast optimization)
   - Auto-generated documentation with detailed Mermaid diagrams
