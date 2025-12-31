@@ -10,6 +10,10 @@ void UScreenTransitionManager::Initialize(FSubsystemCollectionBase& Collection)
 	bIsTransitioning = false;
 	CurrentTransitionEffect = nullptr;
 	ScreenStack.Empty();
+	MaxStackDepth = 10;
+	LastError = EScreenTransitionError::None;
+	LastErrorMessage = TEXT("");
+	bHasPendingContext = false;
 }
 
 void UScreenTransitionManager::Deinitialize()
@@ -53,7 +57,19 @@ void UScreenTransitionManager::TransitionToScreen(TSubclassOf<UScreenBase> Scree
 
 void UScreenTransitionManager::PushScreen(TSubclassOf<UScreenBase> ScreenClass, bool bAsModal, bool bUseTransition, TSubclassOf<UTransitionEffect> TransitionEffectClass)
 {
-	if (!ScreenClass || bIsTransitioning)
+	if (!ScreenClass)
+	{
+		LogError(EScreenTransitionError::InvalidScreenClass, TEXT("PushScreen: Screen class is null"));
+		return;
+	}
+
+	if (bIsTransitioning)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PushScreen: Already transitioning, ignoring request"));
+		return;
+	}
+
+	if (!ValidateStackDepth())
 	{
 		return;
 	}
@@ -183,7 +199,16 @@ void UScreenTransitionManager::ActivateScreen(UScreenBase* Screen)
 {
 	if (Screen)
 	{
-		Screen->OnEnter();
+		if (bHasPendingContext)
+		{
+			Screen->OnEnterWithContext(PendingContext);
+			bHasPendingContext = false;
+			PendingContext = FScreenTransitionContext();
+		}
+		else
+		{
+			Screen->OnEnter();
+		}
 	}
 }
 
@@ -200,21 +225,76 @@ UScreenBase* UScreenTransitionManager::CreateScreen(TSubclassOf<UScreenBase> Scr
 {
 	if (!ScreenClass)
 	{
+		LogError(EScreenTransitionError::InvalidScreenClass, TEXT("Screen class is null"));
 		return nullptr;
 	}
 
 	UWorld* World = GetWorld();
 	if (!World)
 	{
+		LogError(EScreenTransitionError::ScreenCreationFailed, TEXT("World is null"));
 		return nullptr;
 	}
 
 	APlayerController* PC = World->GetFirstPlayerController();
 	if (!PC)
 	{
+		LogError(EScreenTransitionError::ScreenCreationFailed, TEXT("PlayerController is null"));
 		return nullptr;
 	}
 
 	UScreenBase* NewScreen = CreateWidget<UScreenBase>(PC, ScreenClass);
+	if (!NewScreen)
+	{
+		LogError(EScreenTransitionError::ScreenCreationFailed, FString::Printf(TEXT("Failed to create widget of class %s"), *ScreenClass->GetName()));
+		return nullptr;
+	}
+
 	return NewScreen;
+}
+
+void UScreenTransitionManager::TransitionToScreenWithContext(TSubclassOf<UScreenBase> ScreenClass, const FScreenTransitionContext& Context, bool bUseTransition, TSubclassOf<UTransitionEffect> TransitionEffectClass)
+{
+	PendingContext = Context;
+	bHasPendingContext = true;
+	TransitionToScreen(ScreenClass, bUseTransition, TransitionEffectClass);
+}
+
+void UScreenTransitionManager::PushScreenWithContext(TSubclassOf<UScreenBase> ScreenClass, const FScreenTransitionContext& Context, bool bAsModal, bool bUseTransition, TSubclassOf<UTransitionEffect> TransitionEffectClass)
+{
+	PendingContext = Context;
+	bHasPendingContext = true;
+	PushScreen(ScreenClass, bAsModal, bUseTransition, TransitionEffectClass);
+}
+
+void UScreenTransitionManager::SetMaxStackDepth(int32 NewMaxDepth)
+{
+	MaxStackDepth = FMath::Clamp(NewMaxDepth, 1, 100);
+	UE_LOG(LogTemp, Log, TEXT("ScreenTransitionManager: MaxStackDepth set to %d"), MaxStackDepth);
+}
+
+void UScreenTransitionManager::ClearLastError()
+{
+	LastError = EScreenTransitionError::None;
+	LastErrorMessage = TEXT("");
+}
+
+void UScreenTransitionManager::LogError(EScreenTransitionError ErrorType, const FString& ErrorMessage)
+{
+	LastError = ErrorType;
+	LastErrorMessage = ErrorMessage;
+
+	UE_LOG(LogTemp, Error, TEXT("ScreenTransitionManager Error: %s"), *ErrorMessage);
+
+	OnTransitionError.Broadcast(ErrorType, ErrorMessage);
+}
+
+bool UScreenTransitionManager::ValidateStackDepth()
+{
+	if (ScreenStack.Num() >= MaxStackDepth)
+	{
+		LogError(EScreenTransitionError::StackOverflow, FString::Printf(TEXT("Stack depth exceeded maximum of %d"), MaxStackDepth));
+		return false;
+	}
+	return true;
 }

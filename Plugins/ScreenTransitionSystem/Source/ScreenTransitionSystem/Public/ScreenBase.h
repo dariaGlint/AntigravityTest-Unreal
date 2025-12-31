@@ -4,6 +4,9 @@
 #include "Blueprint/UserWidget.h"
 #include "ScreenBase.generated.h"
 
+// Forward declaration
+struct FScreenTransitionContext;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScreenEnter);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScreenExit);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScreenPause);
@@ -22,6 +25,10 @@ public:
 	virtual void OnEnter_Implementation();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Screen")
+	void OnEnterWithContext(const FScreenTransitionContext& Context);
+	virtual void OnEnterWithContext_Implementation(const FScreenTransitionContext& Context);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Screen")
 	void OnExit();
 	virtual void OnExit_Implementation();
 
@@ -32,6 +39,14 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Screen")
 	void OnResume();
 	virtual void OnResume_Implementation();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Screen")
+	bool OnValidate();
+	virtual bool OnValidate_Implementation();
+
+	UFUNCTION(BlueprintPure, BlueprintNativeEvent, Category = "Screen")
+	FString GetScreenName() const;
+	virtual FString GetScreenName_Implementation() const;
 
 	UPROPERTY(BlueprintAssignable, Category = "Screen")
 	FOnScreenEnter OnScreenEnterDelegate;
