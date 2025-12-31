@@ -2,6 +2,35 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 
+// Console commands
+static TAutoConsoleVariable<int32> CVarShowDebugUI(
+	TEXT("ScreenTransition.ShowDebugUI"),
+	0,
+	TEXT("Toggle screen transition debug UI.\n")
+	TEXT("0: Hide, 1: Show"),
+	ECVF_Default
+);
+
+static TAutoConsoleVariable<int32> CVarLogLevel(
+	TEXT("ScreenTransition.LogLevel"),
+	2,
+	TEXT("Set screen transition logging level.\n")
+	TEXT("0: None, 1: Errors Only, 2: Warnings, 3: Verbose"),
+	ECVF_Default
+);
+
+FAutoConsoleCommand CCmdDumpStack(
+	TEXT("ScreenTransition.DumpStack"),
+	TEXT("Print the current screen stack to the log"),
+	FConsoleCommandDelegate::CreateStatic(&UScreenTransitionManager::DumpStackToLog)
+);
+
+FAutoConsoleCommandWithWorldAndArgs CCmdSetMaxDepth(
+	TEXT("ScreenTransition.SetMaxDepth"),
+	TEXT("Set maximum screen stack depth. Usage: ScreenTransition.SetMaxDepth <value>"),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&UScreenTransitionManager::SetMaxDepthCommand)
+);
+
 void UScreenTransitionManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -297,4 +326,59 @@ bool UScreenTransitionManager::ValidateStackDepth()
 		return false;
 	}
 	return true;
+}
+
+void UScreenTransitionManager::DumpStackToLog()
+{
+	UE_LOG(LogTemp, Log, TEXT("=== Screen Transition Stack Dump ==="));
+
+	for (const UWorld* World : TObjectRange<UWorld>())
+	{
+		if (World && World->IsGameWorld())
+		{
+			if (UGameInstance* GI = World->GetGameInstance())
+			{
+				if (UScreenTransitionManager* Manager = GI->GetSubsystem<UScreenTransitionManager>())
+				{
+					UE_LOG(LogTemp, Log, TEXT("Current Screen: %s"), Manager->CurrentScreen ? *Manager->CurrentScreen->GetScreenName() : TEXT("None"));
+					UE_LOG(LogTemp, Log, TEXT("Stack Depth: %d / %d"), Manager->ScreenStack.Num(), Manager->MaxStackDepth);
+					UE_LOG(LogTemp, Log, TEXT("Is Transitioning: %s"), Manager->bIsTransitioning ? TEXT("Yes") : TEXT("No"));
+
+					for (int32 i = 0; i < Manager->ScreenStack.Num(); ++i)
+					{
+						const FScreenStackEntry& Entry = Manager->ScreenStack[i];
+						UE_LOG(LogTemp, Log, TEXT("  [%d] %s (Modal: %s)"),
+							i,
+							Entry.Screen ? *Entry.Screen->GetScreenName() : TEXT("None"),
+							Entry.bIsModal ? TEXT("Yes") : TEXT("No"));
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("==================================="));
+}
+
+void UScreenTransitionManager::SetMaxDepthCommand(const TArray<FString>& Args, UWorld* World)
+{
+	if (Args.Num() < 1)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Usage: ScreenTransition.SetMaxDepth <value>"));
+		return;
+	}
+
+	int32 NewMaxDepth = FCString::Atoi(*Args[0]);
+
+	if (World && World->IsGameWorld())
+	{
+		if (UGameInstance* GI = World->GetGameInstance())
+		{
+			if (UScreenTransitionManager* Manager = GI->GetSubsystem<UScreenTransitionManager>())
+			{
+				Manager->SetMaxStackDepth(NewMaxDepth);
+			}
+		}
+	}
 }

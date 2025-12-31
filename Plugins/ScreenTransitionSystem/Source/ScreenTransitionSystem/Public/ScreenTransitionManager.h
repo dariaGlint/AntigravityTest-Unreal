@@ -130,6 +130,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Screen Transition")
 	FOnScreenTransitionError OnTransitionError;
 
+	// Console command callbacks
+	static void DumpStackToLog();
+	static void SetMaxDepthCommand(const TArray<FString>& Args, UWorld* World);
+
 protected:
 	UPROPERTY()
 	UScreenBase* CurrentScreen;
