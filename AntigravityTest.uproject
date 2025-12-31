@@ -38,6 +38,13 @@
 		{
 			"Name": "AIAssistant",
 			"Enabled": true
+		},
+		{
+			"Name": "DebugEventLogViewer",
+			"Enabled": true,
+			"TargetDenyList": [
+				"Server"
+			]
 		}
 	]
 }
