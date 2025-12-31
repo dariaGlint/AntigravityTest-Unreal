@@ -247,6 +247,153 @@ Core/Shared:                  35
 
 詳細は `.claude/commands/analyze-blueprints.md` を参照してください。
 
+## ue-asset-analyzer - アセット分析・最適化ツール
+
+Unreal Engineプロジェクトのアセットを包括的に分析し、未使用アセットの検出、サイズ最適化、依存関係の可視化を行います。
+
+### 主な機能
+
+1. **未使用アセット検出**
+   - 参照されていないアセットの特定
+   - プロジェクトサイズの削減可能容量を計算
+   - 削除可能なアセットをリスト化
+
+2. **アセットサイズ分析**
+   - 大容量アセットのランキング
+   - タイプ別（テクスチャ、メッシュ、オーディオ等）のサイズ統計
+   - フォルダ別のサイズ内訳
+
+3. **依存関係分析**
+   - アセット間の参照関係をマッピング
+   - 循環参照の検出
+   - リダイレクタの検出
+
+4. **最適化提案**
+   - テクスチャ圧縮設定の推奨
+   - マテリアルインスタンス化の提案
+   - LOD設定の推奨
+
+### 使用方法
+
+#### 基本的な使用
+
+```bash
+# 全体分析
+./scripts/ue-asset-analyzer.sh
+
+# 未使用アセット検出
+./scripts/ue-asset-analyzer.sh --type unused --show-sizes
+
+# サイズ分析
+./scripts/ue-asset-analyzer.sh --type size
+
+# 特定フォルダのみ分析
+./scripts/ue-asset-analyzer.sh --path Content/Variant_Combat
+```
+
+#### 最適化レポート生成
+
+```bash
+# 最適化提案を含むレポート生成
+./scripts/ue-asset-analyzer.sh --optimize --output report.md
+
+# 大きな未使用アセットを検出（10MB以上）
+./scripts/ue-asset-analyzer.sh --type unused --size-threshold 10
+```
+
+#### CI/CD統合
+
+```bash
+# 未使用アセットが見つかったら失敗
+./scripts/ue-asset-analyzer.sh --fail-on-waste
+
+# 無駄が100MBを超えたら失敗
+./scripts/ue-asset-analyzer.sh --fail-threshold 100
+```
+
+### Windows版
+
+```bat
+scripts\ue-asset-analyzer.bat
+```
+
+Windows版は自動的にGit Bashを検出し、完全版を実行します。Git Bashがない場合は基本的な分析のみ行います。
+
+### 出力例
+
+```
+═══════════════════════════════════════════════════════
+  UE Asset Analyzer v1.0.0
+═══════════════════════════════════════════════════════
+
+Scanning for assets...
+Found 234 assets
+
+─────────────────────────────────────────────────────
+Unused Asset Analysis
+─────────────────────────────────────────────────────
+
+Found 15 unused assets
+Potential savings: 124.5 MB
+
+High Priority (Large unused assets):
+  ✗ Content/TestAssets/T_Debug_4K.uasset (45.2 MB)
+  ✗ Content/OldAssets/SK_Character_V1.uasset (32.1 MB)
+
+─────────────────────────────────────────────────────
+Asset Size Analysis
+─────────────────────────────────────────────────────
+
+Total Content Size: 2.4 GB
+
+By Asset Type:
+  Textures:              1.2 GB (50.0%)  - 89 assets
+  Static Meshes:         680 MB (28.3%)  - 45 assets
+  Skeletal Meshes:       320 MB (13.3%)  - 12 assets
+  Audio:                 150 MB (6.3%)   - 34 assets
+  Other:                 50 MB (2.1%)    - 54 assets
+
+Top 10 Largest Assets:
+  1. T_Environment_Atlas_4K.uasset          120.5 MB
+  2. SK_MainCharacter.uasset                 85.2 MB
+  ...
+```
+
+### Claude Codeから実行
+
+```
+「未使用アセットを見つけて」
+「プロジェクトサイズを最適化したい」
+「Content/Charactersフォルダのアセットを分析して」
+```
+
+### 設定ファイル
+
+`Config/AssetAnalyzer.ini` で動作をカスタマイズできます：
+
+```ini
+[AssetAnalyzer]
+LargeAssetThreshold=10.0
+WasteThreshold=100.0
+TextureMaxResolution=2048
+
+[TextureOptimization]
+DefaultCompression=DXT5
+NormalMapCompression=BC5
+```
+
+### 制限事項
+
+現在の実装（Phase 1）はファイルシステムベースの分析です：
+
+- ランタイムで動的にロードされるアセットの検出は限定的
+- バイナリファイルの参照検出のため、一部の参照を見逃す可能性
+- Blueprint内部のノード分析は未対応
+
+より正確な分析には、Unreal EditorのReference ViewerやSize Mapツールを併用してください。
+
+詳細は `.claude/commands/ue-asset-analyzer.md` を参照してください。
+
 ## 今後追加される可能性のあるスクリプト
 
 - `build-plugin.bat/sh` - プラグインのビルド
