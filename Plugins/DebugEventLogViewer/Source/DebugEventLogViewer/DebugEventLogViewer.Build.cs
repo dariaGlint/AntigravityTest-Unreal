@@ -18,6 +18,9 @@ public class DebugEventLogViewer : ModuleRules
 				"UMG",
 				"Slate",
 				"SlateCore",
+				"Json",
+				"JsonUtilities",
+				"ApplicationCore",
 			}
 		);
 

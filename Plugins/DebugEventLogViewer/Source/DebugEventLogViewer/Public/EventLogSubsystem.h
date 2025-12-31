@@ -143,6 +143,40 @@ public:
 	 */
 	UEventLogUIManager* GetUIManager() const { return UIManager; }
 
+	/**
+	 * Export events to CSV file
+	 * @param FilePath Path to save the CSV file
+	 * @return True if export was successful
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Event Log")
+	bool ExportToCSV(const FString& FilePath) const;
+
+	/**
+	 * Export events to JSON file
+	 * @param FilePath Path to save the JSON file
+	 * @return True if export was successful
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Event Log")
+	bool ExportToJSON(const FString& FilePath) const;
+
+	/**
+	 * Get events as CSV string
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Event Log")
+	FString GetEventsAsCSV() const;
+
+	/**
+	 * Get events as JSON string
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Event Log")
+	FString GetEventsAsJSON() const;
+
+	/**
+	 * Copy events to clipboard as text
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Event Log")
+	void CopyEventsToClipboard() const;
+
 	/** Called when an event is logged */
 	UPROPERTY(BlueprintAssignable, Category = "Event Log")
 	FOnEventLogged OnEventLogged;
