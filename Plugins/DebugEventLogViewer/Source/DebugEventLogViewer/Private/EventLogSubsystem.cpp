@@ -3,10 +3,12 @@
 #include "EventLogSubsystem.h"
 #include "EventLogUIManager.h"
 #include "DebugEventLogViewerModule.h"
+#include "DebugCommandSubsystem.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
@@ -43,7 +45,238 @@ void UEventLogSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	// Pre-allocate event buffer
 	Events.Reserve(MaxEvents);
 
+	// Register debug console commands
+	RegisterEventLogCommands();
+
 	UE_LOG(LogEventLogViewer, Log, TEXT("EventLogSubsystem initialized (MaxEvents: %d)"), MaxEvents);
+#endif
+}
+
+void UEventLogSubsystem::RegisterEventLogCommands()
+{
+#if WITH_EVENT_LOG && WITH_DEBUG_COMMANDS
+	UDebugCommandSubsystem* DebugCommands = GetGameInstance()->GetSubsystem<UDebugCommandSubsystem>();
+	if (!DebugCommands)
+	{
+		UE_LOG(LogEventLogViewer, Warning, TEXT("DebugCommandSubsystem not available, event log commands not registered"));
+		return;
+	}
+
+	// ShowEventLog - Show the event log UI
+	DebugCommands->RegisterNativeCommand(
+		TEXT("ShowEventLog"),
+		TEXT("Show the event log viewer UI"),
+		EDebugCommandCategory::Info,
+		TEXT("ShowEventLog"),
+		[](const TArray<FString>& Args, UWorld* World) -> FString
+		{
+			if (!World)
+			{
+				return TEXT("No world found");
+			}
+
+			UEventLogSubsystem* EventLog = UEventLogSubsystem::Get(World);
+			if (EventLog)
+			{
+				EventLog->ShowEventLogUI();
+				return TEXT("Event log UI shown");
+			}
+
+			return TEXT("EventLogSubsystem not found");
+		}
+	);
+
+	// HideEventLog - Hide the event log UI
+	DebugCommands->RegisterNativeCommand(
+		TEXT("HideEventLog"),
+		TEXT("Hide the event log viewer UI"),
+		EDebugCommandCategory::Info,
+		TEXT("HideEventLog"),
+		[](const TArray<FString>& Args, UWorld* World) -> FString
+		{
+			if (!World)
+			{
+				return TEXT("No world found");
+			}
+
+			UEventLogSubsystem* EventLog = UEventLogSubsystem::Get(World);
+			if (EventLog)
+			{
+				EventLog->HideEventLogUI();
+				return TEXT("Event log UI hidden");
+			}
+
+			return TEXT("EventLogSubsystem not found");
+		}
+	);
+
+	// ToggleEventLog - Toggle the event log UI
+	DebugCommands->RegisterNativeCommand(
+		TEXT("ToggleEventLog"),
+		TEXT("Toggle the event log viewer UI"),
+		EDebugCommandCategory::Info,
+		TEXT("ToggleEventLog"),
+		[](const TArray<FString>& Args, UWorld* World) -> FString
+		{
+			if (!World)
+			{
+				return TEXT("No world found");
+			}
+
+			UEventLogSubsystem* EventLog = UEventLogSubsystem::Get(World);
+			if (EventLog)
+			{
+				EventLog->ToggleEventLogUI();
+				bool bVisible = EventLog->IsEventLogUIVisible();
+				return bVisible ? TEXT("Event log UI shown") : TEXT("Event log UI hidden");
+			}
+
+			return TEXT("EventLogSubsystem not found");
+		}
+	);
+
+	// ClearEventLog - Clear all events
+	DebugCommands->RegisterNativeCommand(
+		TEXT("ClearEventLog"),
+		TEXT("Clear all logged events"),
+		EDebugCommandCategory::Info,
+		TEXT("ClearEventLog"),
+		[](const TArray<FString>& Args, UWorld* World) -> FString
+		{
+			if (!World)
+			{
+				return TEXT("No world found");
+			}
+
+			UEventLogSubsystem* EventLog = UEventLogSubsystem::Get(World);
+			if (EventLog)
+			{
+				int32 Count = EventLog->GetEventCount();
+				EventLog->ClearEvents();
+				return FString::Printf(TEXT("Cleared %d events"), Count);
+			}
+
+			return TEXT("EventLogSubsystem not found");
+		}
+	);
+
+	// EventLogCount - Get the number of events
+	DebugCommands->RegisterNativeCommand(
+		TEXT("EventLogCount"),
+		TEXT("Get the number of logged events"),
+		EDebugCommandCategory::Info,
+		TEXT("EventLogCount"),
+		[](const TArray<FString>& Args, UWorld* World) -> FString
+		{
+			if (!World)
+			{
+				return TEXT("No world found");
+			}
+
+			UEventLogSubsystem* EventLog = UEventLogSubsystem::Get(World);
+			if (EventLog)
+			{
+				int32 Count = EventLog->GetEventCount();
+				int32 MaxCount = EventLog->GetMaxEvents();
+				return FString::Printf(TEXT("Event count: %d / %d"), Count, MaxCount);
+			}
+
+			return TEXT("EventLogSubsystem not found");
+		}
+	);
+
+	// ExportEventLog - Export events to file
+	DebugCommands->RegisterNativeCommand(
+		TEXT("ExportEventLog"),
+		TEXT("Export events to CSV or JSON file"),
+		EDebugCommandCategory::Info,
+		TEXT("ExportEventLog <FilePath> (.csv or .json)"),
+		[](const TArray<FString>& Args, UWorld* World) -> FString
+		{
+			if (!World)
+			{
+				return TEXT("No world found");
+			}
+
+			if (Args.Num() < 1)
+			{
+				return TEXT("Usage: ExportEventLog <FilePath> (.csv or .json)");
+			}
+
+			UEventLogSubsystem* EventLog = UEventLogSubsystem::Get(World);
+			if (!EventLog)
+			{
+				return TEXT("EventLogSubsystem not found");
+			}
+
+			FString FilePath = Args[0];
+			FString Extension = FPaths::GetExtension(FilePath).ToLower();
+
+			bool bSuccess = false;
+			if (Extension == TEXT("csv"))
+			{
+				bSuccess = EventLog->ExportToCSV(FilePath);
+			}
+			else if (Extension == TEXT("json"))
+			{
+				bSuccess = EventLog->ExportToJSON(FilePath);
+			}
+			else
+			{
+				return TEXT("Invalid file extension. Use .csv or .json");
+			}
+
+			if (bSuccess)
+			{
+				return FString::Printf(TEXT("Exported %d events to: %s"), EventLog->GetEventCount(), *FilePath);
+			}
+
+			return FString::Printf(TEXT("Failed to export to: %s"), *FilePath);
+		}
+	);
+
+	// EventLogPause - Pause/Resume event logging
+	DebugCommands->RegisterNativeCommand(
+		TEXT("EventLogPause"),
+		TEXT("Pause or resume event logging"),
+		EDebugCommandCategory::Info,
+		TEXT("EventLogPause [on|off]"),
+		[](const TArray<FString>& Args, UWorld* World) -> FString
+		{
+			if (!World)
+			{
+				return TEXT("No world found");
+			}
+
+			UEventLogSubsystem* EventLog = UEventLogSubsystem::Get(World);
+			if (!EventLog)
+			{
+				return TEXT("EventLogSubsystem not found");
+			}
+
+			if (Args.Num() >= 1)
+			{
+				FString Arg = Args[0].ToLower();
+				if (Arg == TEXT("on") || Arg == TEXT("true") || Arg == TEXT("1"))
+				{
+					EventLog->SetPaused(true);
+					return TEXT("Event logging paused");
+				}
+				else if (Arg == TEXT("off") || Arg == TEXT("false") || Arg == TEXT("0"))
+				{
+					EventLog->SetPaused(false);
+					return TEXT("Event logging resumed");
+				}
+			}
+
+			// Toggle if no argument
+			bool bCurrentlyPaused = EventLog->IsPaused();
+			EventLog->SetPaused(!bCurrentlyPaused);
+			return bCurrentlyPaused ? TEXT("Event logging resumed") : TEXT("Event logging paused");
+		}
+	);
+
+	UE_LOG(LogEventLogViewer, Log, TEXT("Event log commands registered"));
 #endif
 }
 

@@ -203,4 +203,7 @@ private:
 
 	/** Add event to buffer (handles ring buffer logic) */
 	void AddEvent(FDebugEvent& Event);
+
+	/** Register event log commands with DebugCommandSubsystem */
+	void RegisterEventLogCommands();
 };
