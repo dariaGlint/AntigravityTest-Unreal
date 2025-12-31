@@ -7,6 +7,8 @@
 #include "DebugEvent.h"
 #include "EventLogSubsystem.generated.h"
 
+class UEventLogUIManager;
+
 /** Delegate for when an event is logged */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEventLogged, const FDebugEvent&, Event);
 
@@ -112,6 +114,35 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Event Log")
 	static bool IsEventLogEnabled();
 
+	/**
+	 * Toggle the event log UI
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Event Log")
+	void ToggleEventLogUI();
+
+	/**
+	 * Show the event log UI
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Event Log")
+	void ShowEventLogUI();
+
+	/**
+	 * Hide the event log UI
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Event Log")
+	void HideEventLogUI();
+
+	/**
+	 * Check if the event log UI is visible
+	 */
+	UFUNCTION(BlueprintPure, Category = "Event Log")
+	bool IsEventLogUIVisible() const;
+
+	/**
+	 * Get the UI manager
+	 */
+	UEventLogUIManager* GetUIManager() const { return UIManager; }
+
 	/** Called when an event is logged */
 	UPROPERTY(BlueprintAssignable, Category = "Event Log")
 	FOnEventLogged OnEventLogged;
@@ -131,6 +162,10 @@ protected:
 private:
 	/** Event ring buffer */
 	TArray<FDebugEvent> Events;
+
+	/** UI Manager */
+	UPROPERTY()
+	TObjectPtr<UEventLogUIManager> UIManager;
 
 	/** Add event to buffer (handles ring buffer logic) */
 	void AddEvent(FDebugEvent& Event);

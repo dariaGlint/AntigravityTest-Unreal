@@ -1,6 +1,7 @@
 // Copyright Antigravity. All Rights Reserved.
 
 #include "EventLogSubsystem.h"
+#include "EventLogUIManager.h"
 #include "DebugEventLogViewerModule.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
@@ -228,4 +229,45 @@ bool UEventLogSubsystem::IsEventLogEnabled()
 #else
 	return false;
 #endif
+}
+
+void UEventLogSubsystem::ToggleEventLogUI()
+{
+#if WITH_EVENT_LOG
+	if (UIManager)
+	{
+		UIManager->ToggleEventLogWidget();
+	}
+#endif
+}
+
+void UEventLogSubsystem::ShowEventLogUI()
+{
+#if WITH_EVENT_LOG
+	if (UIManager)
+	{
+		UIManager->ShowEventLogWidget();
+	}
+#endif
+}
+
+void UEventLogSubsystem::HideEventLogUI()
+{
+#if WITH_EVENT_LOG
+	if (UIManager)
+	{
+		UIManager->HideEventLogWidget();
+	}
+#endif
+}
+
+bool UEventLogSubsystem::IsEventLogUIVisible() const
+{
+#if WITH_EVENT_LOG
+	if (UIManager)
+	{
+		return UIManager->IsEventLogWidgetVisible();
+	}
+#endif
+	return false;
 }
