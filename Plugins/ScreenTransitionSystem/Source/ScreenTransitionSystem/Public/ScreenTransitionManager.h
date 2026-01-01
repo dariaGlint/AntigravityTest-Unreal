@@ -4,43 +4,13 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "ScreenBase.h"
 #include "TransitionEffect.h"
+#include "ScreenTransitionTypes.h"
 #include "ScreenTransitionManager.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnScreenChanged, UScreenBase*, OldScreen, UScreenBase*, NewScreen);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTransitionStarted, UScreenBase*, TargetScreen);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTransitionCompleted, UScreenBase*, CurrentScreen);
-
-UENUM(BlueprintType)
-enum class EScreenTransitionError : uint8
-{
-	None UMETA(DisplayName = "None"),
-	InvalidScreenClass UMETA(DisplayName = "Invalid Screen Class"),
-	StackOverflow UMETA(DisplayName = "Stack Overflow"),
-	StackUnderflow UMETA(DisplayName = "Stack Underflow"),
-	TransitionTimeout UMETA(DisplayName = "Transition Timeout"),
-	ContextValidationFailed UMETA(DisplayName = "Context Validation Failed"),
-	ScreenCreationFailed UMETA(DisplayName = "Screen Creation Failed")
-};
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnScreenTransitionError, EScreenTransitionError, ErrorType, const FString&, ErrorMessage);
-
-USTRUCT(BlueprintType)
-struct SCREENTRANSITIONSYSTEM_API FScreenTransitionContext
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, Category = "Screen Transition")
-	TMap<FString, FString> StringData;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Screen Transition")
-	TMap<FString, int32> IntData;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Screen Transition")
-	TMap<FString, float> FloatData;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Screen Transition")
-	TMap<FString, bool> BoolData;
-};
 
 USTRUCT(BlueprintType)
 struct FScreenStackEntry

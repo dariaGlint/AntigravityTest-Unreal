@@ -2,10 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "ScreenTransitionTypes.h"
 #include "ScreenBase.generated.h"
-
-// Forward declaration
-struct FScreenTransitionContext;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScreenEnter);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScreenExit);
