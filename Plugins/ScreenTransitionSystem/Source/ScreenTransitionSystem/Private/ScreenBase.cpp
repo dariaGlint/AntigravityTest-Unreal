@@ -1,4 +1,5 @@
 #include "ScreenBase.h"
+#include "ScreenTransitionManager.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 
@@ -44,6 +45,11 @@ void UScreenBase::OnEnter_Implementation()
 	OnScreenEnterDelegate.Broadcast();
 }
 
+void UScreenBase::OnEnterWithContext_Implementation(const FScreenTransitionContext& Context)
+{
+	OnEnter_Implementation();
+}
+
 void UScreenBase::OnExit_Implementation()
 {
 	if (!bIsActive)
@@ -66,6 +72,16 @@ void UScreenBase::OnPause_Implementation()
 void UScreenBase::OnResume_Implementation()
 {
 	OnScreenResumeDelegate.Broadcast();
+}
+
+bool UScreenBase::OnValidate_Implementation()
+{
+	return true;
+}
+
+FString UScreenBase::GetScreenName_Implementation() const
+{
+	return GetClass()->GetName();
 }
 
 void UScreenBase::ApplyInputSettings()
