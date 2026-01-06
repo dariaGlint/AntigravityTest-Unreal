@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Achievement System",
+	"Description": "A comprehensive achievement/trophy system with condition definitions, progress tracking, unlock processing, and statistics collection",
+	"Category": "Game Progression",
+	"CreatedBy": "dariaGlint",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "AchievementSystem",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
