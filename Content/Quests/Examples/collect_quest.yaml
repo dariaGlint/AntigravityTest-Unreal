@@ -1,0 +1,28 @@
+quest:
+  id: Q002_GatherResources
+  title: "Gather Resources"
+  description: "Collect resources from the forest to help the village"
+
+  objectives:
+    - type: CollectItems
+      target: Wood
+      count: 10
+      description: "Collect 10 pieces of wood"
+
+    - type: CollectItems
+      target: Stone
+      count: 5
+      description: "Collect 5 stones"
+      optional: true
+
+  rewards:
+    - type: Currency
+      amount: 50
+      description: "50 gold coins"
+    - type: Experience
+      amount: 150
+      description: "150 XP"
+
+  prerequisites: []
+
+  repeatable: true
